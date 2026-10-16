@@ -1,0 +1,31 @@
+.account-screen{min-height:100dvh;display:grid;place-items:center;background:#e1f3ff;padding:24px;color:#164b88}.account-card{width:min(100%,620px);padding:30px;background:#fffdf5;border:2px solid #1769c3;border-radius:16px}.account-card h1{font-size:1.6rem;margin:18px 0}.account-card form{display:grid;gap:16px;margin:20px 0}.account-card label{display:grid;gap:6px}.account-card input{padding:12px;border:1px solid #94bcdf;border-radius:6px;color:#164b88;background:white;font:inherit}.account-card button{padding:10px 14px;cursor:pointer;border:1px solid #1769c3;border-radius:6px}.account-card button:disabled{opacity:.6;cursor:wait}.account-actions{display:flex;flex-wrap:wrap;gap:10px}.teacher-request{padding:16px 0;border-bottom:1px solid #94bcdf}.account-card p{line-height:1.6;margin:12px 0}
+
+.account-screen{position:relative;isolation:isolate;overflow:hidden;background:#142861}
+.account-scenery{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;background:#142861 url("/images/codigo-perdido-wallpaper.png") center center / cover no-repeat}
+.account-scenery-shade{position:absolute;inset:0;background:linear-gradient(90deg,#10245008,#10245030 50%,#10245008)}
+.account-card{position:relative;background:#fffdf5f5;box-shadow:0 18px 70px #07173580;max-height:calc(100dvh - 48px);overflow-y:auto}
+.account-card button:focus-visible,.account-card input:focus-visible{outline:3px solid #d99912;outline-offset:3px}
+@media(max-width:640px){.account-screen{padding:16px}.account-card{padding:22px;max-height:calc(100dvh - 32px)}.account-scenery{background-position:38% center}.account-actions button{flex:1 1 130px}}
+
+.account-card{width:min(100%,480px);padding:32px;border:1px solid #d4e1ed;border-radius:22px;background:rgba(255,253,248,.66);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);box-shadow:0 24px 90px #06152d80}
+.account-card>.eyebrow{font-size:10px;letter-spacing:1.6px;color:#23659a}
+.account-card h1{font-size:28px;letter-spacing:-.7px;margin:18px 0 8px;line-height:1.2}
+.account-card .account-intro{font-size:14px;color:#61778e;margin:0 0 24px}
+.account-role-switch{display:flex;gap:4px;padding:5px;border:1px solid #d9e3ec;background:#edf2f6;border-radius:12px}
+.account-card .account-role-switch button{flex:1;min-height:42px;border:0;background:transparent;color:#64758b;font:inherit;font-size:13px;font-weight:600;border-radius:8px;padding:10px 6px}
+.account-card .account-role-switch button[aria-pressed="true"]{background:white;color:#15599a;box-shadow:0 2px 6px #13375915}
+.account-card .account-access-note{margin:12px 0 22px;font-size:12px;color:#657b90;line-height:1.5}
+.account-card form{margin:0 0 22px;gap:18px}
+.account-card form label{font-size:13px;font-weight:600;gap:8px}
+.account-card form input{min-width:0;width:100%;min-height:48px;padding:12px 14px;border:1px solid #cad8e4;border-radius:10px;font-size:14px;transition:border-color .15s}
+.account-card form input::placeholder{color:#8a9aac;font-weight:400}
+.account-card .account-submit{display:flex;align-items:center;justify-content:center;gap:14px;min-height:48px;border-radius:10px;font-size:14px;font-weight:700;margin-top:2px}
+.account-submit span{font-size:19px}
+.account-mode-switch{border-top:1px solid #dde5ec;padding-top:20px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:5px 9px;color:#6a7f92;font-size:13px}
+.account-card .account-mode-switch button{border:0;background:transparent;padding:6px 2px;color:#155fa6;font-size:13px;font-weight:700;text-decoration:underline;text-underline-offset:4px}
+.account-card .account-notice{padding:12px 14px;border:1px solid #a6d5bb;border-radius:10px;background:#edf8f0;color:#286441;font-size:13px}
+.account-card>.audio-controls{border:0;padding:0;margin-bottom:22px;gap:10px;font-size:10px}
+.account-card .audio-controls button{font-size:10px;padding:5px 8px;background:transparent;border-color:#d5e1eb;border-radius:20px;color:#61778e}
+.account-card .audio-controls label{display:flex;gap:6px;font-size:10px;color:#61778e}
+.account-card .audio-controls input{width:64px;min-height:0}
+@media(max-width:640px){.account-card{padding:24px;border-radius:18px}.account-card h1{font-size:25px}.account-card .account-intro{margin-bottom:20px}.account-role-switch button{min-width:0}}

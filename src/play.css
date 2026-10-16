@@ -1,0 +1,114 @@
+/* An unobstructed map and a thumb-sized command dock. */
+.header-focus{padding:8px 11px;min-height:36px;border:1px solid #a7d6ff77;background:#ffffff14;color:#fff4bd;font-size:11px;white-space:nowrap}
+.header-focus:hover:not(:disabled){background:#fff1a6;color:#154c86;border-color:#e0bd40}
+.app-shell.focus-mode{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;width:100%;height:100vh;height:100dvh;min-height:0;overflow:hidden;background:#142861;padding-top:env(safe-area-inset-top,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.app-shell.focus-mode:fullscreen{width:100%;height:100dvh}
+.focus-mode .topbar,.focus-mode .sidebar,.focus-mode .mission-heading,.focus-mode .program-column,.focus-mode .mission-progress,.focus-mode .briefing-line,.focus-mode .main-footer,.focus-mode .map-toolbar,.focus-mode .map-legend,.focus-mode .map-position{display:none}
+.focus-mode .workspace{display:flex;flex:1;width:100%;min-width:0;min-height:0;max-width:none;margin:0}
+.focus-mode .main-content{display:flex;flex:1;width:100%;min-width:0;min-height:0;max-width:none;padding:0;margin:0}
+/* The normal grid aligns at start. Here the absolute SVG has no intrinsic
+   height, so the map column must stretch through the available play area. */
+.focus-mode .game-layout{display:flex;flex:1;width:100%;min-width:0;min-height:0;gap:0;align-items:stretch}
+.focus-mode .field-column{display:flex;flex:1;min-width:0;min-height:0;align-self:stretch}
+.focus-mode .map-panel{display:flex;flex:1;flex-direction:column;min-width:0;min-height:0;width:100%;border:0;border-radius:0;box-shadow:none}
+.focus-mode .map-viewport{flex:1;min-height:0;width:100%;overflow:hidden}
+.focus-mode .game-map{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;aspect-ratio:auto}
+.focus-mode .map-compass{display:none}
+.focus-mode .flashlight-label{top:10px;right:10px;font-size:8px}
+.focus-mode .minimap-wrap{bottom:10px;right:10px;padding:5px}
+.focus-mode .mini-map{width:49px;height:49px}
+.focus-mode .minimap-wrap span{font-size:4px}
+.focus-mode .completion-overlay{padding:18px;overflow-y:auto;justify-content:flex-start;overscroll-behavior:contain}
+.focus-mode .completion-symbol{flex-shrink:0;margin-top:5px}
+.focus-mode .completion-overlay .primary{flex-shrink:0}
+.focus-mode .modal{max-height:calc(100dvh - 24px);overscroll-behavior:contain}
+.focus-toolbar{display:flex;align-items:center;justify-content:space-between;gap:6px;flex-shrink:0;min-height:46px;padding:0 8px;border-bottom:3px solid #ffdc4f;background:#0b59b9;color:#fff}
+.focus-toolbar button{min-height:44px;min-width:44px;padding:7px;border:0;color:#fff4bc;border-radius:6px;touch-action:manipulation}
+.focus-toolbar button:hover:not(:disabled){color:#fff;background:#ffffff1a;border:0}
+.focus-back{gap:6px;font-size:10px}
+.focus-back span{font-size:10px}
+.focus-stats{display:flex;align-items:center;justify-content:center;gap:13px;min-width:0;flex:1;font-family:var(--mono);font-size:11px}
+.focus-stats strong,.focus-stats>span{display:flex;align-items:center;gap:5px;white-space:nowrap}
+.focus-stats strong{font-size:14px;color:#ffe678}
+.focus-stats small{font-size:8px;font-weight:400}
+.focus-stats>span{color:#e2f4ff}
+.focus-command-count{font-size:9px}
+.focus-options{display:flex;flex-shrink:0;gap:0}
+.focus-open-clue{position:absolute;bottom:10px;left:10px;z-index:2;min-height:44px;padding:10px 13px;background:#ffdf65;border:2px solid #bd8b23;border-radius:9px;color:#68430c;font-size:11px;box-shadow:0 3px 0 #77511d60;touch-action:manipulation}
+.play-controls{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch;gap:8px;flex-shrink:0;width:100%;padding:8px max(10px,calc((100vw - 1100px)/2)) calc(9px + env(safe-area-inset-bottom,0px));border-top:3px solid #3975bd;background:linear-gradient(180deg,#fffbeb,#e7f4ff);color:#174c81;box-shadow:0 -4px 14px #0c28583d}
+.play-queue-row{grid-column:1/-1;display:flex;align-items:center;gap:6px;min-width:0;min-height:44px}
+.play-queue{display:flex;align-items:center;gap:6px;flex:1;min-width:0;height:44px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#8bb9df transparent;overscroll-behavior-x:contain;padding-bottom:2px}
+.play-queue-empty{display:flex;align-items:center;gap:8px;color:#416f94;font-size:10px;white-space:nowrap}
+.play-queue-empty>svg{color:#1a69b4;flex-shrink:0}
+.play-queue-chip{display:flex;align-items:center;justify-content:center;gap:6px;min-height:40px;min-width:62px;padding:7px;border:1px solid #86b7df;border-radius:7px;background:#e6f3ff;color:#145a9e;white-space:nowrap;flex-shrink:0;touch-action:manipulation}
+.play-queue-chip small{font:8px var(--mono);color:#527a9b}
+.play-queue-chip b{font:10px var(--mono);color:#97661a}
+.play-queue-chip.executing{background:#ffe98b;border-color:#cca333;opacity:1}
+.play-clear{min-height:44px;min-width:44px;background:#fff;border:1px solid #8fb8db;color:#3c6e98;touch-action:manipulation}
+.play-directions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;min-width:0}
+.play-command{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:52px;padding:7px 3px;border:2px solid #4c8fcd;border-radius:9px;background:#e3f2ff;color:#155693;box-shadow:0 3px 0 #b5d3e9;touch-action:manipulation;font-size:10px;font-weight:700}
+.play-command.left{background:#fff0f0;border-color:#db8b9e;color:#a52c44}
+.play-command.right{background:#fff2b3;border-color:#cfac3e;color:#74500d}
+.play-command.if{background:#e2f5d8;border-color:#7daa62;color:#28642c}
+.play-execution{display:flex;align-items:stretch;gap:7px;min-width:0}
+.play-execution button,.play-execution select{min-height:48px;touch-action:manipulation}
+.play-loop{display:flex;align-items:stretch;flex-shrink:0;border:1px solid #d8b95c;border-radius:8px;background:#fff0b3;overflow:hidden}
+.play-loop select{width:44px;min-width:44px;padding:5px 1px 5px 4px;border:0;border-radius:0;background:#ffdf73;color:#71500d;font:12px var(--mono)}
+.play-loop button{flex-direction:column;gap:3px;min-width:55px;padding:5px;border:0;border-left:1px solid #dfc378;border-radius:0;color:#805612;font-size:8px}
+.play-run{flex:1;justify-content:center;gap:6px;padding:8px 10px;font-size:12px;white-space:nowrap}
+.play-step{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:57px;padding:6px;font-size:9px}
+.play-menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0 20px}
+.play-menu-grid button{min-height:48px;font-size:11px;padding:9px}
+.play-menu-field{display:block;font-size:11px;color:#2d6088;font-weight:700;margin-top:15px}
+.play-menu-field select{display:block;width:100%;min-height:44px;margin-top:7px;padding:10px;border:2px solid #94bcdf;background:#fff;color:#1b4b75;font-size:12px}
+@media(max-width:640px){
+ .topbar{padding-left:12px;padding-right:12px;gap:8px}
+ .header-actions{gap:8px}
+ .header-focus{min-width:32px;padding:6px;border:0;background:none}
+ .header-focus>span{display:none}
+ .focus-toolbar{min-height:46px;padding:0 5px}
+ .focus-back{gap:3px;padding-left:3px!important}
+ .focus-back span{font-size:9px}
+ .focus-stats{gap:9px;font-size:10px}
+ .focus-stats strong{font-size:13px;gap:4px}
+ .focus-command-count{font-size:8px}
+ .play-controls{grid-template-columns:minmax(0,1fr);gap:8px;padding-left:9px;padding-right:9px}
+ .play-command{min-height:51px;font-size:10px}
+ .play-loop button{min-width:64px;font-size:9px;flex-direction:row;gap:5px;padding:7px}
+ .play-loop select{width:47px}
+ .play-run{font-size:12px}
+ .play-step{min-width:66px;flex-direction:row;gap:5px;font-size:10px}
+ .play-execution button,.play-execution select{min-height:44px}
+ .play-queue-empty{font-size:9px;gap:6px}
+ .play-menu-grid{gap:8px}
+ .play-menu-grid button{font-size:10px}
+}
+@media(max-height:500px) and (orientation:landscape){
+ .play-controls{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;padding-top:5px;padding-bottom:calc(6px + env(safe-area-inset-bottom,0px))}
+ .play-queue-row{min-height:40px}
+ .play-queue{height:40px}
+ .play-queue-chip{min-height:36px;min-width:57px;padding:5px 7px}
+ .play-clear{min-height:40px;min-width:40px}
+ .play-command{min-height:44px;font-size:8px;gap:2px;padding:4px}
+ .play-command svg{width:19px;height:19px}
+ .play-directions{gap:5px}
+ .play-execution{gap:6px}
+ .play-loop button{flex-direction:column;min-width:47px;padding:3px;font-size:8px}
+ .play-loop select{width:41px;min-width:41px;font-size:10px}
+ .play-run{padding:5px;font-size:10px}
+ .play-step{min-width:48px;flex-direction:column;font-size:8px;gap:2px}
+ .play-execution button,.play-execution select{min-height:44px}
+ .focus-toolbar{min-height:42px}
+ .focus-toolbar button{min-height:40px}
+ .focus-mode .completion-overlay{padding:12px}
+ .focus-mode .completion-symbol{display:none}
+ .focus-mode .completion-overlay h2{font-size:21px;margin:8px 0}
+ .focus-mode .completion-overlay p{font-size:11px}
+ .focus-mode .completion-points{margin:10px 0 18px}
+}
+@media(max-width:380px){.topbar .header-help{display:none}.focus-stats{gap:7px}.focus-stats>span{gap:3px}.focus-toolbar button{min-width:40px}.focus-back span{font-size:8px}}
+
+@media(max-width:640px){.entry-form input,.answer-row input,.bank-form input,.bank-form textarea,.bank-selects select,.play-menu-field select{font-size:16px}.play-loop select{font-size:16px}}
+
+@media(min-width:641px) and (max-width:1180px){.header-focus>span{display:none}.header-focus{width:36px;min-width:36px;padding:7px}}
+@media(min-width:641px) and (max-width:1000px){.topbar .brand{min-width:0}.topbar .header-actions{gap:12px}}
