@@ -9,7 +9,7 @@ function GameScenery(){
 export default function AccountGate({children}){
  const [session,setSession]=useState(null),[profile,setProfile]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [student,setStudent]=useState(()=>{try{return readStudent(window.localStorage);}catch{return null;}});
- useAudioScene(!session&&!student?'login':'silent');
+ useAudioScene(!session&&!student?'login':null);
  const registering=useRef(false);
  const [loginEmail,setLoginEmail]=useState('');
  const [mode,setMode]=useState('login'),[role,setRole]=useState('student'),[busy,setBusy]=useState(false);

@@ -27,7 +27,7 @@ function answerCorrectly(state){
  return gameReducer(state,{type:'CLOSE_CARD'});
 }
 test('Every map is enclosed, connected, deterministic, and all 3–12 clues lie on a solvable route',()=>{
- for(let level=0;level<3;level++)for(let count=3;count<=12;count++){
+ for(let level=0;level<LEVEL_INFO.length;level++)for(let count=3;count<=12;count++){
   const m=createMap(level,count);
   assert.equal(m.size,LEVEL_INFO[level].size);
   assert.deepEqual(m,createMap(level,count));
@@ -41,20 +41,20 @@ test('Every map is enclosed, connected, deterministic, and all 3–12 clues lie 
   assert.equal(visited.size,m.grid.flat().filter(n=>n===0).length);
  }
 });
-test('Complete campaign: 36 cards, correct feedback, unlocks, terminal rewards, and final score',()=>{
+test('Complete campaign: six themed stages, correct feedback, unlocks, terminal rewards, and final score',()=>{
  let state=freshGame(),cards=0;
  assert.strictEqual(gameReducer(state,{type:'LEVEL',level:2}),state,'locked stages cannot open');
- for(let level=0;level<3;level++){
+ for(let level=0;level<LEVEL_INFO.length;level++){
   state=gameReducer(state,{type:'LEVEL',level});
   state=walk(state,createMap(level).route,s=>{cards++;assert.equal(s.running,false);return answerCorrectly(s);});
   assert.equal(state.runs[level].completed,true);
-  assert.equal(state.runs[level].solved.length,12);
-  assert.equal(state.unlocked,Math.min(2,level+1));
-  assert.equal(state.runs[level].commands,[139,162,255][level]);
-  assert.equal(totalScore(state),[1261,2499,3644][level]);
+  assert.equal(state.runs[level].solved.length,DEFAULT_QUESTIONS[level].length);
+  assert.equal(state.unlocked,Math.min(LEVEL_INFO.length-1,level+1));
+  assert(state.runs[level].commands>=state.runs[level].moves);
+  assert.equal(sectorScore(state.runs[level]).earned,DEFAULT_QUESTIONS[level].length*100+200);
  }
- assert.equal(cards,36);
- assert.equal(totalScore(state),3644);
+ assert.equal(cards,DEFAULT_QUESTIONS.flat().length);
+ assert.equal(totalScore(state),state.runs.reduce((sum,run)=>sum+Math.max(0,run.solved.length*100+200-run.commands),0));
  assert(state.runs.every(r=>r.completed));
  const before=totalScore(state);state=gameReducer(state,{type:'ANSWER',value:'6'});assert.equal(totalScore(state),before);
 });
@@ -105,7 +105,7 @@ test('Save/resume preserves the campaign and tolerates malformed or unavailable 
  const storage={data:new Map(),getItem(k){return this.data.get(k)||null;},setItem(k,v){this.data.set(k,v);}};
  let state=walk(freshGame(),createMap(0).route,answerCorrectly);state=gameReducer(state,{type:'LEVEL',level:1});
  assert.equal(saveGame(storage,state),true);const restored=loadGame(storage);
- assert.equal(restored.level,1);assert.equal(restored.unlocked,1);assert.equal(totalScore(restored),1261);assert.deepEqual(restored.runs,state.runs);assert.equal(restored.running,false);
+ assert.equal(restored.level,1);assert.equal(restored.unlocked,1);assert.equal(totalScore(restored),totalScore(state));assert.deepEqual(restored.runs,state.runs);assert.equal(restored.running,false);
  storage.setItem(SAVE_KEY,'broken');assert.equal(loadGame(storage).level,0);
  storage.setItem(SAVE_KEY,JSON.stringify({...state,runs:[{player:{x:-99,y:1,dir:1}},...state.runs.slice(1)]}));assert.equal(totalScore(loadGame(storage)),0);
  assert.equal(saveGame({setItem(){throw Error('quota');}},state),false);assert.equal(loadGame({getItem(){throw Error('denied');}}).level,0);
@@ -113,7 +113,7 @@ test('Save/resume preserves the campaign and tolerates malformed or unavailable 
 test('Teacher data validation, import/export round-trip, added/removed cards, and reset behavior',()=>{
  const qs=structuredClone(DEFAULT_QUESTIONS).map(level=>level.slice(0,6));qs[0].push({...qs[0][0],id:'custom-test',title:'Pergunta extra',answer:'1/2'});
  const checked=validateQuestions(JSON.parse(JSON.stringify(qs)));assert.equal(checked[0].length,7);assert.equal(createMap(0,7).clues.length,7);
- let state=gameReducer(freshGame(),{type:'QUESTIONS',questions:checked});state=walk(state,createMap(0,7).route,answerCorrectly);assert.equal(state.runs[0].solved.length,7);assert.equal(totalScore(state),761);
+ let state=gameReducer(freshGame(),{type:'QUESTIONS',questions:checked});state=walk(state,createMap(0,7).route,answerCorrectly);assert.equal(state.runs[0].solved.length,7);assert.equal(totalScore(state),900-state.runs[0].commands);
  state=gameReducer(state,{type:'RESTART'});assert.equal(totalScore(state),0);assert.equal(state.unlocked,0);assert.equal(state.questions[0].length,7);
  assert.throws(()=>validateQuestions([[],[],[]]));assert.throws(()=>validateQuestions([[...qs[0],qs[0][0]],qs[1],qs[2]]));
  qs[0][0].answer='NaN';assert.throws(()=>validateQuestions(qs));
@@ -121,7 +121,7 @@ test('Teacher data validation, import/export round-trip, added/removed cards, an
 test('Accepted numbers include decimals and fractions; malformed numeric answers are rejected',()=>{
  assert.equal(numeric(' 78,5 '),78.5);assert.equal(numeric('1/2'),.5);assert.equal(numeric('-4.5'),-4.5);
  for(const v of ['','2foo','1/0','<script>','1+2','Infinity','0x10'])assert(Number.isNaN(numeric(v)));
- assert.equal(validateQuestions(DEFAULT_QUESTIONS).flat().length,36);
+ assert.equal(validateQuestions(DEFAULT_QUESTIONS).flat().length,45);
 });
 
 test('The same objective pays less when the player executes more commands',()=>{
@@ -144,6 +144,16 @@ test('Only executed actions cost points, with expanded loops, conditions and fai
 });
 test('The command discount never makes a sector negative and does not consume points from other sectors',()=>{
  const s=freshGame();s.runs[0].awards={a1:100};s.runs[0].commands=150;s.runs[1].awards={g1:100};s.runs[1].commands=20;
- assert.deepEqual(sectorScore(s.runs[0]),{earned:100,commandCost:150,score:0});assert.equal(totalScore(s),80);
+ assert.deepEqual(sectorScore(s.runs[0]),{earned:100,commandCost:150,enemyPenalty:0,score:0});assert.equal(totalScore(s),80);
  s.runs[0].completed=true;assert.equal(sectorScore(s.runs[0]).score,150);assert.equal(totalScore(s),230);
+});
+
+test('Each stage has its own theme and legacy saves retain progress',()=>{
+ assert.deepEqual(LEVEL_INFO.map((_,i)=>createMap(i).theme),['forest','rock','water','lava','factory','horror']);
+ const state=freshGame();state.runs[0].commands=7;
+ const legacy={...state,questions:state.questions.slice(0,3),runs:state.runs.slice(0,3)};
+ const restored=loadGame({getItem:()=>JSON.stringify(legacy)});
+ assert.equal(restored.runs.length,6);
+ assert.equal(restored.runs[0].commands,7);
+ assert.equal(restored.questions[5][0].id,'h1');
 });

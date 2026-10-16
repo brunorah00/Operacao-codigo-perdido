@@ -45,11 +45,12 @@ function fakeAudioHost(){
 test('Login loop stops on game entry, mute and hidden tabs; muted effects do not play',async()=>{
  const host=fakeAudioHost(),audio=createSoundSystem(host);
  audio.setScene('login');assert.equal(host.counts.starts,0);
- await audio.unlock();assert.equal(host.intervals.size,1);assert.equal(host.counts.starts,9);
- await audio.unlock();assert.equal(host.counts.starts,9);
+ await audio.unlock();assert.equal(host.intervals.size,1);assert(host.counts.starts>32);
+ const loginVoices=host.counts.starts;
+ await audio.unlock();assert.equal(host.counts.starts,loginVoices);
  audio.setScene('silent');assert.equal(host.intervals.size,0);
- audio.play('step');assert.equal(host.counts.starts,11);
- audio.setEnabled(false);audio.play('complete');assert.equal(host.counts.starts,11);
+ audio.play('step');assert.equal(host.counts.starts,loginVoices+2);
+ audio.setEnabled(false);audio.play('complete');assert.equal(host.counts.starts,loginVoices+2);
  audio.setEnabled(true);audio.setScene('login');assert.equal(host.intervals.size,1);
  host.document.hidden=true;audio.visibility();assert.equal(host.intervals.size,0);
  const before=host.counts.starts;audio.play('clue');assert.equal(host.counts.starts,before);
@@ -59,4 +60,27 @@ test('Unsupported browsers and denied autoplay remain usable',async()=>{
  const unavailable=createSoundSystem({});assert.equal(unavailable.supported(),false);await unavailable.unlock();unavailable.play('step');unavailable.dispose();
  const host=fakeAudioHost();host.AudioContext=class{constructor(){throw Error('unavailable');}};
  const denied=createSoundSystem(host);await assert.doesNotReject(()=>denied.unlock());denied.dispose();
+});
+
+test('Every phase loops music, replaces the previous track, and respects mute and visibility',async()=>{
+ const host=fakeAudioHost(),audio=createSoundSystem(host);
+ await audio.unlock();
+ for(const theme of ['forest','rock','water','lava','factory','horror']){
+  const before=host.counts.starts;
+  audio.setScene(theme);
+  assert(host.counts.starts>before);
+  assert.equal(host.intervals.size,1,'only the current phase loops');
+  const started=host.counts.starts;
+  await audio.unlock();assert.equal(host.counts.starts,started,'clicks must not restart music');
+  [...host.intervals][0]();assert(host.counts.starts>started,'next phrase plays');
+ }
+ audio.setEnabled(false);
+ assert.equal(host.intervals.size,0);
+ const muted=host.counts.starts;audio.play('step');assert.equal(host.counts.starts,muted);
+ audio.setEnabled(true);assert.equal(host.intervals.size,1);
+ host.document.hidden=true;audio.visibility();assert.equal(host.intervals.size,0);
+ host.document.hidden=false;audio.visibility();await Promise.resolve();await Promise.resolve();
+ assert.equal(host.intervals.size,1);
+ audio.setScene('silent');assert.equal(host.intervals.size,0);
+ audio.dispose();
 });

@@ -1,7 +1,11 @@
 export const LEVEL_INFO = [
-  {name:'O arquivo desaparecido', place:'Arquivo central', size:20, topic:'Álgebra e funções', color:'#8ce5c0', intro:'O sistema do instituto foi apagado. Siga as pistas no arquivo para descobrir quem acessou o servidor.', reveal:'O acesso veio do laboratório. Uma rotina automática, e não uma pessoa, iniciou o apagão.'},
-  {name:'As medidas do mistério', place:'Laboratório de pesquisa', size:24, topic:'Geometria e medidas', color:'#9cbcff', intro:'As pistas levam ao laboratório. Reconstrua as medidas do experimento para localizar o sinal perdido.', reveal:'O sinal aponta para o observatório. A rotina estava protegendo uma descoberta importante.'},
-  {name:'A última coordenada', place:'Observatório', size:28, topic:'Probabilidade e estatística', color:'#e6bbff', intro:'O código está no observatório. Analise os dados e recupere a chave que pode restaurar o instituto.', reveal:'Mistério resolvido! Um protocolo de segurança isolou os dados após uma falha. Você recuperou o código e restaurou o instituto.'}
+  {name:'O arquivo desaparecido', theme:'forest', place:'Floresta dos arquivos', size:20, topic:'Álgebra e funções', color:'#8ce5c0', intro:'O sistema do instituto foi apagado. Siga as pistas no arquivo para descobrir quem acessou o servidor.', reveal:'O acesso veio do laboratório. Uma rotina automática, e não uma pessoa, iniciou o apagão.'},
+  {name:'As medidas do mistério', theme:'rock', place:'Lajedo das medidas', size:24, topic:'Geometria e medidas', color:'#9cbcff', intro:'As pistas levam ao laboratório. Reconstrua as medidas do experimento para localizar o sinal perdido.', reveal:'O sinal aponta para o observatório. A rotina estava protegendo uma descoberta importante.'},
+  {name:'A última coordenada', theme:'water', place:'Águas do observatório', size:28, topic:'Probabilidade e estatística', color:'#e6bbff', intro:'O código está no observatório. Analise os dados e recupere a chave que pode restaurar o instituto.', reveal:'A chave parcial foi encontrada. Siga até o núcleo de lava e restaure a fábrica.'},
+ {theme:'lava',name:'O núcleo em chamas',place:'Fase da lava',size:24,topic:'Razões e temperatura',color:'#ff9554',intro:'Atravesse as passarelas do vulcão e estabilize o núcleo.',reveal:'Núcleo estabilizado. A fábrica pode ser reativada.'},
+ {theme:'factory',name:'As máquinas silenciosas',place:'Fábrica abandonada',size:24,topic:'Produção e lógica',color:'#edc762',intro:'Reconstrua os cálculos das máquinas e localize o sinal misterioso.',reveal:'O último sinal vem da ala assombrada.'},
+ {theme:'horror',name:'O último espectro',place:'Fase de terror',size:28,topic:'Enigmas e sequências',color:'#b6a0ea',intro:'Entre na ala assombrada e decifre a chave final entre lápides e teias.',reveal:'Os fantasmas eram projeções de segurança! Código recuperado e instituto restaurado.'}
+
 ];
 const q=(id,title,prompt,answer,hint,explanation,clue)=>({id,title,prompt,answer,hint,explanation,clue});
 export const DEFAULT_QUESTIONS = [
@@ -48,6 +52,23 @@ export const DEFAULT_QUESTIONS = [
   q('p6','O código perdido','A última chave é x = log₂(64). Qual é o valor de x?','6','Pergunte: 2 elevado a qual número resulta em 64?','Como 2⁶ = 64, então log₂(64) = 6.','Chave recuperada. A restauração do instituto foi autorizada!')
  ]
 ];
+DEFAULT_QUESTIONS.push(
+ [
+ q('l1','Calor crescente','A lava estava a 700 °C e aqueceu 50 °C por hora durante 3 horas. Qual é a temperatura final?','850','Some três aumentos de 50.','700 + 3 × 50 = 850 °C.','O primeiro sensor voltou a funcionar.'),
+ q('l2','O resfriamento','Um duto de 120 metros foi dividido em 8 partes iguais. Quantos metros mede cada parte?','15','Divida 120 por 8.','120 ÷ 8 = 15 metros.','Os dutos resfriam o núcleo.'),
+ q('l3','Energia do núcleo','O núcleo tem 240 unidades de energia. Foram usadas 25%. Quantas restam?','180','Restaram 75% da energia.','240 × 0,75 = 180.','A energia restante alimenta a fábrica.')
+ ],
+ [
+ q('f1','Linha de montagem','Uma máquina produz 18 peças por minuto. Quantas produz em 7 minutos?','126','Multiplique a produção pelo tempo.','18 × 7 = 126 peças.','A linha de montagem foi restaurada.'),
+ q('f2','Engrenagens','Uma engrenagem dá 4 voltas enquanto outra dá 12. Se a primeira der 9 voltas, quantas dará a segunda?','27','A segunda gira três vezes mais.','9 × 3 = 27 voltas.','As engrenagens abriram uma porta oculta.'),
+ q('f3','Lote defeituoso','Em um lote de 200 peças, 10 apresentam defeito. Qual é a porcentagem de peças defeituosas?','5','Divida 10 por 200 e multiplique por 100.','10 ÷ 200 × 100 = 5%.','O último sinal vem da ala assombrada.')
+ ],
+ [
+ q('h1','As badaladas','O sino toca 3, 6, 12 e 24 vezes em noites consecutivas. Quantas vezes tocará na próxima noite?','48','Cada quantidade é o dobro da anterior.','24 × 2 = 48 badaladas.','As badaladas seguem um programa.'),
+ q('h2','Sombras no corredor','Quatro projetores criam 7 sombras cada um. Quantas sombras aparecem ao todo?','28','Multiplique o número de projetores por 7.','4 × 7 = 28 sombras.','As sombras são projeções de segurança.'),
+ q('h3','Cadeado espectral','O cadeado abre com x na equação 3x − 9 = 18. Qual é x?','9','Some 9 aos dois lados e divida por 3.','3x = 27; x = 9.','Código final recuperado. O instituto está seguro!')
+ ]
+);
 export function numeric(value){
  const s=String(value).trim().replace(',','.');
  if (/^[+-]?\d+(?:\.\d+)?$/.test(s)) return Number(s);
@@ -55,7 +76,8 @@ export function numeric(value){
  return fraction && Number(fraction[2])!==0 ? Number(fraction[1])/Number(fraction[2]) : NaN;
 }
 export function validateQuestions(data){
- if(!Array.isArray(data)||data.length!==3) throw Error('O banco precisa conter os três mapas.');
+ if(!Array.isArray(data)||![3,LEVEL_INFO.length].includes(data.length)) throw Error('O banco precisa conter os seis mapas.');
+ if(data.length===3)data=[...data,...structuredClone(DEFAULT_QUESTIONS.slice(3))];
  const ids=new Set();
  return data.map((level,i)=>{
   if(!Array.isArray(level)||level.length<3||level.length>12) throw Error(`O mapa ${i+1} precisa ter de 3 a 12 desafios.`);

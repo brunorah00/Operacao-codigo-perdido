@@ -1,3 +1,4 @@
+import {ENEMY_TYPES} from './enemies.js';
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {canSee,key} from './engine.js';
 import {mapViewDimensions,updateViewportSize} from './display.js';
@@ -73,14 +74,14 @@ function cameraFor(camera,player,w,h,size){
 }
 function useWalkingPosition(run,size,w,h,duration){
  const initial=()=>{const camera=cameraFor({x:run.player.x+.5,y:run.player.y+.5},run.player,w,h,size);return {x:run.player.x,y:run.player.y,camera,walking:false};};
- const [position,setPosition]=useState(initial),frame=useRef(position),previous=useRef({x:run.player.x,y:run.player.y,moves:run.moves,size,w,h});
+ const [position,setPosition]=useState(initial),frame=useRef(position),previous=useRef({x:run.player.x,y:run.player.y,moves:run.moves,impact:run.impact?.id,size,w,h});
  useEffect(()=>{
   const last=previous.current,from=frame.current,target={x:run.player.x,y:run.player.y},camera=cameraFor(from.camera,target,w,h,size);
   const changed=last.x!==target.x||last.y!==target.y;
   const resized=last.size!==size||last.w!==w||last.h!==h;
   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const reset=resized||run.moves<last.moves||Math.abs(last.x-target.x)+Math.abs(last.y-target.y)>1;
-  previous.current={...target,moves:run.moves,size,w,h};
+  const reset=resized||last.impact!==run.impact?.id||run.moves<last.moves||Math.abs(last.x-target.x)+Math.abs(last.y-target.y)>1;
+  previous.current={...target,moves:run.moves,impact:run.impact?.id,size,w,h};
   if(!changed&&!resized&&!reset){if(frame.current.walking){const next={...target,camera,walking:false};frame.current=next;setPosition(next);}return;}
   if(reset||reduced){const next={...target,camera:resized?cameraFor({x:target.x+.5,y:target.y+.5},target,w,h,size):camera,walking:false};frame.current=next;setPosition(next);return;}
   let request,start;
@@ -90,7 +91,7 @@ function useWalkingPosition(run,size,w,h,duration){
    frame.current=next;setPosition(next);if(progress<1)request=requestAnimationFrame(tick);
   };
   request=requestAnimationFrame(tick);return()=>cancelAnimationFrame(request);
- },[run.player.x,run.player.y,run.moves,size,w,h]);
+ },[run.player.x,run.player.y,run.moves,run.impact?.id,size,w,h]);
  return position;
 }
 const WORLD_COLORS={
@@ -98,6 +99,86 @@ const WORLD_COLORS={
  24:{floor:'#ffda79',alternate:'#f2c456',wallTop:'#b99af5',wallBottom:'#8153c4',grout:'#563688',cap:'#e2c5ff',front:'#57358e'},
  28:{floor:'#70d4ef',alternate:'#51b9e2',wallTop:'#83a8ff',wallBottom:'#4d74df',grout:'#2b4ca6',cap:'#b6eaff',front:'#2e4c9b'}
 };
+// Um único ambiente por fase.
+function landscapeAt(map){return map.theme||'forest';}
+function LandscapeTile({kind,wall,x,y}){
+ const variant=(x*7+y*11)%3;
+ return <g transform={`translate(${x*64} ${y*64})`} aria-hidden="true">
+  {kind==='horror'&&(wall?<>
+   <rect x="1" y="1" width="62" height="62" rx="4" fill="#292c43"/>
+   <path d="M12 57V25a20 20 0 0 1 40 0v32Z" fill="#626079" stroke="#a39bb5" strokeWidth="2"/>
+   <path d="M32 17v24m-9-15h18" stroke="#302f48" strokeWidth="4"/>
+   <path d="M3 3h26M3 3v26M3 3l20 20M3 14l11-11M3 23 23 3" stroke="#c5bddc" opacity=".6" fill="none"/>
+   {variant===0&&<><ellipse cx="21" cy="49" rx="4" ry="2" fill="#c7ffb0"/><ellipse cx="43" cy="49" rx="4" ry="2" fill="#c7ffb0"/></>}
+  </>:<>
+   <rect x="1" y="1" width="62" height="62" rx="3" fill="#45435b" stroke="#777088"/>
+   <path d="m5 14 21 4-7 17 22 8-4 18" stroke="#24273c" strokeWidth="2" fill="none"/>
+   {variant===0&&<><ellipse cx="47" cy="15" rx="8" ry="3" fill="#c7badd" opacity=".2"/><path d="M46 15v-7" stroke="#e4d5b3" strokeWidth="3"/><path d="M46 8q-5-5 1-8 5 6-1 8" fill="#afefc0"/></>}
+  </>)}
+  {kind==='water'&&<>
+   <rect x="1" y="1" width="62" height="62" rx="5" fill="#147ea9" stroke="#84e8ee" strokeWidth="2"/>
+   <path d="M5 13q7-6 14 0t14 0t14 0t14 0M4 36q7-6 14 0t14 0t14 0t14 0M9 54q7-6 14 0t14 0t14 0" fill="none" stroke="#74e0f0" strokeWidth="2" opacity=".8"/>
+   <path d="M10 24h9m24 22h8" stroke="#c6ffff" strokeWidth="2"/>
+  </>}
+  {kind==='lava'&&<>
+   <rect x="1" y="1" width="62" height="62" rx="5" fill="#803c39" stroke="#ed7d36" strokeWidth="2"/>
+   <path d="m4 9 20 13-8 16 20 9 7 15M24 1l7 16 20 6 12-9M36 47l18-10 9 7" fill="none" stroke="#ff822d" strokeWidth="7" strokeLinejoin="round"/>
+   <path d="m4 9 20 13-8 16 20 9 7 15M31 17l20 6" fill="none" stroke="#ffe078" strokeWidth="2"/>
+   <circle cx="49" cy="9" r="3" fill="#ffbc44"/>
+  </>}
+  {(kind==='water'||kind==='lava')&&!wall&&<>
+   <rect x="7" y="4" width="50" height="56" rx="3" fill={kind==='water'?'#ac7947':'#697b8b'} stroke="#293d4b" strokeWidth="2"/>
+   <path d="M10 13h44M10 23h44M10 33h44M10 43h44M10 53h44" stroke={kind==='water'?'#e5b975':'#b8c9cd'} strokeWidth="2"/>
+   <path d="M9 5v54M55 5v54" stroke={kind==='water'?'#705033':'#e9b342'} strokeWidth="3"/>
+  </>}
+  {kind==='forest'&&(wall?<>
+   <rect x="1" y="1" width="62" height="62" rx="4" fill="#367e46"/>
+   <ellipse cx="33" cy="53" rx="26" ry="8" fill="#194f39"/>
+   <path d="M30 29v27h9V29" fill="#925b36" stroke="#5b3c2d" strokeWidth="2"/>
+   <path d="m33 0-23 26h12L5 42q27 15 55-1L44 26h11Z" fill={variant===0?'#28865b':'#216b4b'} stroke="#154f3a" strokeWidth="2"/>
+   <path d="m32 8-12 15h9m6 4 11 12" fill="none" stroke="#65bc70" strokeWidth="3" strokeLinecap="round"/>
+  </>:<>
+   <path d="m6 46 3-8 3 8m38-30 3-8 3 8m-36 43 3-7 3 7" stroke="#257343" strokeWidth="2" fill="none"/>
+   {variant===0&&<><circle cx="15" cy="13" r="4" fill="#ffe290"/><circle cx="15" cy="13" r="1.5" fill="#ed805a"/></>}
+  </>)}
+  {kind==='rock'&&(wall?<>
+   <path d="M3 51 8 19 23 5 48 8 60 28 58 54 34 62Z" fill="#879497" stroke="#465d65" strokeWidth="2"/>
+   <path d="m8 19 23 9 17-20M31 28l3 34m-3-34L60 28" fill="none" stroke="#bfc9be" strokeWidth="3"/>
+   <path d="m14 37 8 3-4 11m24-13 9 7" fill="none" stroke="#526d74" strokeWidth="2"/>
+   <path d="m10 18 12-9 17 1" fill="none" stroke="#e0dfc6" strokeWidth="3"/>
+  </>:<>
+   <rect x="2" y="2" width="60" height="60" rx="3" fill="#c4bc9c"/>
+   <path d="m2 22 25 5 17-25M27 27l-4 35m4-35 35 17" fill="none" stroke="#918e7b" strokeWidth="2"/>
+   <path d="m8 10 11 2m23 39 9 2" stroke="#eee4bc" strokeWidth="3"/>
+  </>)}
+  {kind==='factory'&&<>
+   <rect x="1" y="1" width="62" height="62" rx="3" fill={wall?'#52677b':'#8a9da6'} stroke="#304b60" strokeWidth="2"/>
+   <path d="M3 18h58M19 3v58M44 3v58M3 44h58" stroke="#344f64" opacity=".5"/>
+   {wall?<>
+    <rect x="8" y="10" width="48" height="38" rx="5" fill="#344b62" stroke="#b2ced5" strokeWidth="2"/>
+    <path d="M15 20h25m-25 7h25m-25 7h25" stroke="#819caa" strokeWidth="3"/>
+    <circle cx="48" cy="22" r="3" fill="#7ce9bc"/>
+    <path d="M4 54h56" stroke="#f5c957" strokeWidth="7" strokeDasharray="8 5"/>
+   </>:<>
+    <circle cx="8" cy="8" r="2" fill="#e0edf0"/><circle cx="56" cy="56" r="2" fill="#e0edf0"/>
+    {variant===0&&<path d="M24 14h16v8H24Zm0 14h16v8H24Zm0 14h16v8H24Z" fill="#c4d2d4" opacity=".6"/>}
+   </>}
+  </>}
+ </g>;
+}
+function Enemy({theme}){
+ const {name,color}=ENEMY_TYPES[theme];
+ return <g className={'enemy-body enemy-'+theme}>
+  <title>{name}</title><ellipse cy="19" rx="20" ry="6" fill="#101627" opacity=".5"/>
+  {theme==='forest'&&<><ellipse cx="-16" cy="-9" rx="14" ry="7" fill="#d9f6ff" opacity=".8"/><ellipse cx="16" cy="-9" rx="14" ry="7" fill="#d9f6ff" opacity=".8"/><ellipse rx="16" ry="20" fill={color}/><path d="M-15-5h30M-15 6h30" stroke="#423e36" strokeWidth="6"/><path d="m0 25-5-10h10Z" fill="#eae5bd"/></>}
+  {theme==='rock'&&<><path d="m-22 15 1-26 14-13 24 7 9 23-10 15Z" fill={color} stroke="#4f5966" strokeWidth="3"/><path d="m-15-7 15 8 13-13M0 1l-5 18" fill="none" stroke="#d0d0d4" strokeWidth="3"/></>}
+  {theme==='water'&&<><path d="M-21 1a21 21 0 0 1 42 0Z" fill={color} stroke="#c0fbff" strokeWidth="2"/><path d="M-15 2q-8 10 0 18M-5 2q9 12 0 23M7 2q-8 10 0 20M16 2q8 8 0 18" fill="none" stroke={color} strokeWidth="4" strokeLinecap="round"/></>}
+  {theme==='lava'&&<path d="M-18 16Q-30 0-10-19l1 13Q7-15 4-29 33-4 18 16Z" fill={color} stroke="#ffdb68" strokeWidth="3"/>}
+  {theme==='factory'&&<><path d="M-28-15h16m24 0h16" stroke="#bcd6df" strokeWidth="5"/><path d="M-22-21v12m44-12v12" stroke="#697d92" strokeWidth="3"/><rect x="-19" y="-12" width="38" height="30" rx="8" fill={color} stroke="#e8d7d2" strokeWidth="2"/><path d="m-10 19-6 7m26-7 6 7" stroke="#bcc8d4" strokeWidth="4"/></>}
+  {theme==='horror'&&<path d="M-20 23V-5a20 20 0 0 1 40 0v28l-10-6-10 7-10-7Z" fill={color} fillOpacity=".85" stroke="#e3d8ff" strokeWidth="2"/>}
+  <ellipse cx="-7" cy={theme==='water'?-6:-3} rx="4" ry="5" fill="#251f38"/><ellipse cx="7" cy={theme==='water'?-6:-3} rx="4" ry="5" fill="#251f38"/><circle cx="-6" cy="-4" r="1.5" fill="#fff2a0"/><circle cx="8" cy="-4" r="1.5" fill="#fff2a0"/>
+ </g>;
+}
 export function GameMap({map,run,questions,compact=false,stepDuration=360,fitViewport=false}){
  const svgRef=useRef(null),[viewport,setViewport]=useState(null);
  useEffect(()=>{
@@ -107,14 +188,19 @@ export function GameMap({map,run,questions,compact=false,stepDuration=360,fitVie
   window.addEventListener('resize',measure);return()=>window.removeEventListener('resize',measure);
  },[fitViewport]);
  const tile=64,{w,h}=fitViewport?mapViewDimensions(viewport?.width,viewport?.height,compact,map.size):{w:compact?7:12,h:compact?7:9.2},terrain=WORLD_COLORS[map.size]||WORLD_COLORS[20];
- const position=useWalkingPosition(run,map.size,w,h,stepDuration);
+ const visualRun=run.impact?{...run,player:run.impact}:run;
+ const position=useWalkingPosition(visualRun,map.size,w,h,stepDuration);
  const vx=(position.camera.x-w/2)*tile,vy=(position.camera.y-h/2)*tile;
  const cells=useMemo(()=>{const cells=[];
  for(let y=0;y<map.size;y++)for(let x=0;x<map.size;x++){
-  const seen=run.seen[key(x,y)];if(!seen)continue;const visible=canSee(map,run.player,x,y);
+  const seen=run.seen[key(x,y)];if(!seen)continue;const visible=canSee(map,visualRun.player,x,y);
   const px=x*tile,py=y*tile;
-  if(map.grid[y][x])cells.push(<g key={key(x,y)} opacity={visible?1:.22}><rect x={px+1} y={py+3} width="62" height="61" rx="4" fill={terrain.front}/><rect x={px+2} y={py-5} width="60" height="55" rx="4" fill="url(#wall)" stroke={terrain.grout} strokeWidth="1.5"/><rect x={px+4} y={py-4} width="56" height="6" rx="2" fill={terrain.cap}/><path d={`M${px+8} ${py+5}h47M${px+5} ${py+18}h54m-31-17v17m-13 0v24m28-24v24`} stroke={terrain.grout} opacity=".65"/><path d={`M${px+5} ${py+49}h53`} stroke={terrain.grout} strokeWidth="3"/></g>);
-  else cells.push(<g key={key(x,y)} opacity={visible?1:.3}><rect x={px+.5} y={py+.5} width="63" height="63" rx="2" fill={(x+y)%2?terrain.floor:terrain.alternate} stroke="#ffffff" strokeOpacity=".18" strokeWidth=".6"/><path d={`M${px+10} ${py+12}h9m29 38h5`} stroke="#f2ffc3" opacity=".65"/>{(x*7+y*3)%13===0&&<circle cx={px+30} cy={py+43} r="1.7" fill="#f5ffc5"/>}</g>);
+  const kind=landscapeAt(map,x,y);
+  cells.push(<g key={key(x,y)} opacity={visible?1:(map.grid[y][x]?.22:.3)}>
+   {!map.grid[y][x]&&<rect x={px+.5} y={py+.5} width="63" height="63" rx="2" fill={(x+y)%2?terrain.floor:terrain.alternate}/>}
+   <LandscapeTile kind={kind} wall={!!map.grid[y][x]} x={x} y={y}/>
+  </g>);
+
  }return cells;},[map,run,terrain]);
  const rot=[-90,0,90,180][run.player.dir],cx=(position.x+.5)*tile,cy=(position.y+.5)*tile;
  const exitSeen=run.seen[key(map.exit.x,map.exit.y)];
@@ -126,23 +212,31 @@ export function GameMap({map,run,questions,compact=false,stepDuration=360,fitVie
   </defs>
   <rect x={vx} y={vy} width={w*tile} height={h*tile} fill="#142861"/>
   {cells}
+  {(run.enemies||[]).map(enemy=>canSee(map,visualRun.player,enemy.x,enemy.y)&&<g key={enemy.id} className="map-enemy" style={{transform:'translate('+(enemy.x*tile+32)+'px, '+(enemy.y*tile+32)+'px)'}}><Enemy theme={map.theme}/></g>)}
   <circle cx={cx} cy={cy} r="155" fill="url(#glow)" pointerEvents="none"/>
   {map.clues.map((c,j)=>{
-   if(!run.seen[key(c.x,c.y)])return null;const solved=run.solved.includes(questions[j].id),lit=canSee(map,run.player,c.x,c.y);
+   if(!run.seen[key(c.x,c.y)])return null;const solved=run.solved.includes(questions[j].id),lit=canSee(map,visualRun.player,c.x,c.y);
    return <g key={j} transform={`translate(${c.x*tile+32} ${c.y*tile+32})`} opacity={lit?1:.25}>
     <circle r="24" fill={solved?'#99ff65':'#ffe35d'} opacity=".22"/><rect x="-13" y="-17" width="26" height="33" rx="5" fill={solved?'#3bba51':'#ffdb3c'} stroke={solved?'#1e783d':'#b77d14'} strokeWidth="2.5"/>
     {solved?<path d="m-7 0 5 5 9-11" stroke="#fff" strokeWidth="3" fill="none"/>:<><path d="M-7-9H7M-7-4H2" stroke="#bd7f10" strokeWidth="2"/><text textAnchor="middle" y="11" fontSize="13" fontWeight="800" fill="#725009">{j+1}</text></>}
    </g>;
   })}
-  {exitSeen&&<g opacity={canSee(map,run.player,map.exit.x,map.exit.y)?1:.25} transform={`translate(${map.exit.x*tile+8} ${map.exit.y*tile+8})`}><rect width="48" height="48" rx="7" fill="#e84252" stroke="#ffe16b" strokeWidth="2"/><path d="M13 36V13h22v23M20 24h6m-3-3 3 3-3 3" stroke="#fff5b6" strokeWidth="2"/></g>}
+  {exitSeen&&<g opacity={canSee(map,visualRun.player,map.exit.x,map.exit.y)?1:.25} transform={`translate(${map.exit.x*tile+8} ${map.exit.y*tile+8})`}><rect width="48" height="48" rx="7" fill="#e84252" stroke="#ffe16b" strokeWidth="2"/><path d="M13 36V13h22v23M20 24h6m-3-3 3 3-3 3" stroke="#fff5b6" strokeWidth="2"/></g>}
   <rect x={vx} y={vy} width={w*tile} height={h*tile} fill="url(#edge)" pointerEvents="none"/>
   <g transform={`translate(${cx} ${cy}) rotate(${rot})`} pointerEvents="none"><path d="m20-11 60-23M20 11l60 23" stroke="#fff5a6" strokeWidth="1" opacity=".22"/></g>
-  <g transform={`translate(${cx} ${cy})`} className="map-robot" pointerEvents="none"><WalkingRobot direction={run.player.dir} walking={position.walking} stepDuration={stepDuration}/></g>
+  <g transform={`translate(${cx} ${cy})`} pointerEvents="none">
+   {run.impact?<g key={run.impact.id} className="robot-impact">
+    <g className="robot-falling"><WalkingRobot direction={run.impact.dir} walking={false}/></g>
+    <g className="impact-flash"><circle cy="-12" r="29" fill="#fff4bc"/><circle cy="-12" r="44" fill="none" stroke="#ffad43" strokeWidth="7"/></g>
+    <g className="impact-burst">{Array.from({length:12},(_,i)=>{const angle=i*Math.PI/6;return <g key={i} style={{'--spark-x':Math.cos(angle)*85+'px','--spark-y':Math.sin(angle)*85-25+'px'}} className="impact-spark"><rect x="-5" y="-18" width={i%2?7:11} height="8" rx="2" fill={['#ffcf53','#ee5362','#69dfff'][i%3]}/></g>;})}<circle className="impact-smoke" cy="-14" r="32" fill="#b6c9dd"/></g>
+    <text className="impact-points" y="-80" textAnchor="middle" fill="#fff3b0" stroke="#8b243c" strokeWidth="1" paintOrder="stroke" fontSize="23" fontWeight="900">−30</text>
+   </g>:<g className={run.invulnerable>0?"map-robot robot-protected":"map-robot"}><WalkingRobot direction={run.player.dir} walking={position.walking} stepDuration={stepDuration}/></g>}
+  </g>
  </svg>;
 }
 export function MiniMap({map,run}){
  return <svg className="mini-map" viewBox={`0 0 ${map.size} ${map.size}`} role="img" aria-label="Mapa das áreas já exploradas">
-  {Object.keys(run.seen).map(k=>{const [x,y]=k.split(',').map(Number);return <rect key={k} x={x} y={y} width=".9" height=".9" fill={map.grid[y][x]?'#f89e41':'#78d750'}/>;})}
+  {Object.keys(run.seen).map(k=>{const [x,y]=k.split(',').map(Number);return <rect key={k} x={x} y={y} width=".9" height=".9" fill={map.grid[y][x]?{forest:'#216b4b',water:'#147ea9',rock:'#879497',lava:'#ed7d36',factory:'#52677b',horror:'#626079'}[landscapeAt(map,x,y)]:'#d6dab1'}/>;})}
   <circle cx={run.player.x+.5} cy={run.player.y+.5} r=".7" fill="#ffef6a" stroke="#fff" strokeWidth=".15"/>
  </svg>;
 }

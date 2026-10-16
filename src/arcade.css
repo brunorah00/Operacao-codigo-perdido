@@ -11,3 +11,49 @@ button{font-weight:600}button:hover:not(:disabled){background:#deefff;border-col
 .completion-overlay{background:#e2f8e9f2;backdrop-filter:blur(7px)}.completion-symbol{background:#ffdf56;border:3px solid #d19a22;color:#925100;box-shadow:0 4px 0 #d5b45f}.completion-overlay .eyebrow{color:#197340}.completion-overlay h2{color:#155b39;font-weight:900}.completion-overlay p{color:#2a6a4b}.completion-points{color:#895b10;font-weight:700}.completion-net{color:#206a46}.storage-warning{background:#fff2ae;color:#71480a;border-bottom:2px solid #deb544}
 .modal{background:#fffdf5;color:#1a426d;border:3px solid #1769c3;border-radius:16px;box-shadow:0 7px 0 #0c4d9e,0 25px 90px #05274d55;scrollbar-color:#72aed8 #e4f3ff}.modal::backdrop{background:#0b3e7e8c;backdrop-filter:blur(5px)}.modal-heading .eyebrow{color:#1764ab}.modal-heading h2{color:#164b88;font-weight:900}.modal-heading .icon-button{color:#326491}.modal>.muted{color:#4b6b87}.question-mark{background:#ffdf59;border:2px solid #ce9f28;color:#9c5912;box-shadow:0 3px 0 #e9c46b}.question-prompt{color:#214d74}.field-label,.bank-form label,.bank-selects label{color:#285b87;font-weight:700}.answer-row input,.bank-form input,.bank-form textarea,.bank-selects select{background:#fff;border:2px solid #94bcdf;color:#1b4b75}.wrong{background:#fff0ed;border-color:#e6b2a5;color:#9c2f2f}.hint-line{border-color:#c4dceb}.hint-line .text-button{color:#90610b}.hint-line>.mono{color:#325f80}.hint-box{background:#fff4c9;border-color:#e4c76b;color:#705213}.modal-footer{border-color:#bad5e9}.solution{background:#e6f8e4;border:2px solid #8ec67e}.success-label{color:#1c6c36;font-weight:700}.solution>p{color:#2e6641}.card-command-cost{color:#306e49}.card-command-cost strong{color:#895a16}.evidence{color:#7b5513;border-color:#9cc58b}.notebook-title>.mono{color:#23704c}.evidence-list article{color:#5f7e97;background:#eef5fb;border-color:#b2cadf}.evidence-list article.discovered{background:#fff6ca;border-color:#d8bc63;color:#5a502b}.evidence-number{border-color:#8db5d4;color:#3e719e}.discovered .evidence-number{background:#e5f4c2;border-color:#83af4f;color:#3d7528}.evidence-list .points{color:#896211}.help-intro{background:linear-gradient(135deg,#ddf4ff,#fff0bd);border:2px solid #91bfdf}.help-intro p{color:#2d6284}.help-grid article{background:#ebf5ff;border:2px solid #a6c8e7}.help-grid article:nth-child(2){background:#fff1d5;border-color:#e3c685}.help-grid article:nth-child(3){background:#f0e9ff;border-color:#c6afe9}.help-grid article:nth-child(4){background:#e5f6dc;border-color:#a9cd8b}.help-grid article>svg{color:#1764ac}.help-num{color:#517da0}.help-grid p{color:#456b8b}.rules{border-color:#b9d4e9}.rules p{color:#3e6888}.rules strong{color:#164e8b;font-weight:700}.bank-tools .text-button{color:#226ba8}.bank-tools .danger-text,.danger-text{color:#ae2941}.bank-selects{border-color:#b9d4e9}.confirm-description{color:#3a6685}
 .entry-screen{background:radial-gradient(ellipse at 14% 18%,#fff 0 4%,transparent 4.3%),radial-gradient(ellipse at 25% 19%,#fff 0 6%,transparent 6.3%),radial-gradient(ellipse at 78% 17%,#fff 0 6%,transparent 6.3%),linear-gradient(180deg,#50b9f6,#b2ecff 65%,#9edb6c 65.3%,#69b641 100%)}.entry-brand{color:#124c92;font-weight:900;text-shadow:0 1px #fff}.entry-brand svg{color:#e6a600}.entry-welcome{background:linear-gradient(135deg,#dff4ff,#fff2b8);border:2px solid #9cc7e5}.entry-welcome p{color:#2e6185}.entry-form label{color:#2d608b;font-weight:700}.entry-form input{background:#fff;border:2px solid #98bfdf;color:#1c507e}.entry-note{color:#476c8a;border-color:#bed6e7}.entry-note svg{color:#a87810}.ranking-scroll{border:2px solid #a2c6e2;scrollbar-color:#6fa9d6 #edf7ff}.ranking-table thead th{background:#145fbc;color:#fff}.ranking-table tbody td,.ranking-table tbody th{background:#f7fcff;border-color:#c3daec}.ranking-table tbody th{color:#245780}.ranking-table .current-player td,.ranking-table .current-player th{background:#fff1b1}.ranking-table th small{color:#875008}.ranking-place{color:#3f6b8c}.ranking-place.place-1{color:#9d6300}.ranking-place.place-2{color:#536b8a}.ranking-place.place-3{color:#a4552f}.ranking-score{color:#155cb4;font-weight:700}.ranking-sectors{color:#3c6c91}.ranking-footnote{color:#3a6f8b}.ranking-footnote svg{color:#a87b0a}
+
+/* Patrulhas animadas respeitam a preferência de movimento do jogador. */
+.map-enemy { transition: transform 520ms linear; pointer-events: none; }
+.enemy-body { animation: enemy-hover 1.2s ease-in-out infinite alternate; }
+.enemy-forest { animation: enemy-hover .18s ease-in-out infinite alternate; }
+.enemy-rock { animation: enemy-stomp 1.8s ease-in-out infinite; }
+.enemy-lava { animation: enemy-hover .45s ease-in-out infinite alternate; }
+.enemy-factory { animation: enemy-hover .7s ease-in-out infinite alternate; }
+.enemy-horror { animation: enemy-hover 2s ease-in-out infinite alternate; }
+.robot-protected .robot-shadow { stroke: #a2f3ff; stroke-width: 5; opacity: .9; }
+@keyframes enemy-hover { from { transform: translateY(-3px); } to { transform: translateY(3px); } }
+@keyframes enemy-stomp { 0%,100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+@media (prefers-reduced-motion: reduce) { .map-enemy { transition: none; } .enemy-body { animation: none; } }
+
+.robot-falling { transform-box: fill-box; transform-origin: center bottom; animation: robot-fall 1.2s ease-in forwards; }
+.impact-flash { animation: impact-flash 1.2s ease-out forwards; }
+.impact-spark { animation: impact-spark 1.2s ease-out forwards; }
+.impact-smoke { animation: impact-smoke 1.2s ease-out forwards; }
+.impact-points { animation: impact-points 1.2s ease-out forwards; }
+@keyframes robot-fall {
+  0% { transform: translateY(0) rotate(0); opacity: 1; }
+  15% { transform: translate(7px,-15px) rotate(22deg); }
+  36% { transform: translate(14px,8px) rotate(86deg) scaleY(.8); opacity: 1; }
+  44%,100% { transform: translate(14px,12px) rotate(95deg) scale(.3); opacity: 0; }
+}
+@keyframes impact-flash {
+  0%,32% { transform: scale(.1); opacity: 0; }
+  38% { transform: scale(.7); opacity: 1; }
+  65%,100% { transform: scale(1.9); opacity: 0; }
+}
+@keyframes impact-spark {
+  0%,35% { transform: translate(0,0) scale(.1); opacity: 0; }
+  40% { opacity: 1; }
+  90%,100% { transform: translate(var(--spark-x),var(--spark-y)) rotate(160deg) scale(.3); opacity: 0; }
+}
+@keyframes impact-smoke {
+  0%,40% { transform: scale(.2); opacity: 0; }
+  55% { opacity: .7; }
+  100% { transform: translateY(-35px) scale(1.8); opacity: 0; }
+}
+@keyframes impact-points { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-35px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+ .robot-falling { animation: none; opacity: .4; }
+ .impact-flash,.impact-spark,.impact-smoke { animation: none; opacity: 0; }
+ .impact-points { animation: none; }
+}

@@ -14,7 +14,7 @@ export function AudioProvider({children}){
  },[system]);
  return <AudioContext.Provider value={{system,settings,setSettings}}>{children}</AudioContext.Provider>;
 }
-export function useAudioScene(scene){const audio=useContext(AudioContext);useEffect(()=>{audio?.system.setScene(scene);return()=>audio?.system.setScene('silent');},[audio?.system,scene]);}
+export function useAudioScene(scene){const audio=useContext(AudioContext);useEffect(()=>{if(!scene)return;audio?.system.setScene(scene);return()=>audio?.system.setScene('silent');},[audio?.system,scene]);}
 export function useGameSounds(state){
  const audio=useContext(AudioContext),previous=useRef(state);
  useEffect(()=>{for(const event of gameSoundEvents(previous.current,state))audio?.system.play(event);previous.current=state;},[state,audio?.system]);

@@ -11,7 +11,7 @@ const identity=(given,family)=>`${given.toLocaleLowerCase('pt-BR')}\n${family.to
 export function campaignData(state){const {version,questions,level,unlocked,runs}=state;return {version,questions,level,unlocked,runs};}
 export function restoreCampaign(data){return loadGame({getItem:()=>JSON.stringify(data)});}
 export const bankSignature=questions=>JSON.stringify(questions);
-const maximumScore=questions=>questions.flat().length*100+600;
+const maximumScore=questions=>questions.flat().length*100+questions.length*200;
 export function emptyPlayers(questions=DEFAULT_QUESTIONS){return {version:1,questions,players:[],pendingLegacy:null};}
 function stats(state){return {scoringVersion:SCORING_VERSION,score:totalScore(state),commands:state.runs.reduce((n,r)=>n+r.commands,0),clues:state.runs.reduce((n,r)=>n+r.solved.length,0),completed:state.runs.filter(r=>r.completed).length};}
 const better=(candidate,record)=>candidate.score>record.score||(candidate.score===record.score&&candidate.commands<record.commands);
@@ -26,7 +26,7 @@ export function readPlayers(storage){
      const givenName=normalizeName(record.givenName),familyName=normalizeName(record.familyName,'Sobrenome'),nameKey=identity(givenName,familyName);
      if(typeof record.id!=='string'||!record.id||ids.has(record.id)||names.has(nameKey))continue;
      const state=restoreCampaign(record.campaign),current=stats(state),max=maximumScore(state.questions);
-     const validBest=record.best?.scoringVersion===SCORING_VERSION&&Number.isInteger(record.best.commands)&&record.best.commands>=0&&Number.isInteger(record.best.score)&&record.best.score<=max&&record.best.score>=0&&Number.isInteger(record.best.clues)&&record.best.clues>=0&&record.best.clues<=state.questions.flat().length&&Number.isInteger(record.best.completed)&&record.best.completed>=0&&record.best.completed<=3;
+     const validBest=record.best?.scoringVersion===SCORING_VERSION&&Number.isInteger(record.best.commands)&&record.best.commands>=0&&Number.isInteger(record.best.score)&&record.best.score<=max&&record.best.score>=0&&Number.isInteger(record.best.clues)&&record.best.clues>=0&&record.best.clues<=state.questions.flat().length&&Number.isInteger(record.best.completed)&&record.best.completed>=0&&record.best.completed<=state.questions.length;
      const best=validBest&&!better(current,record.best)?record.best:current;
      players.push({id:record.id,givenName,familyName,campaign:campaignData(state),best});ids.add(record.id);names.add(nameKey);
     }catch{/* Keep other valid players if one entry is damaged. */}

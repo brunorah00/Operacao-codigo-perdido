@@ -5,6 +5,12 @@
 
 Jogo educacional em React e Vite para ensino médio. Esta implementação independente preserva a proposta do robô detetive; o código do projeto anterior não estava disponível na sessão.
 
+## Ambientes e inimigos
+
+Cada uma das seis fases possui um único tema: floresta, lajedo, água, lava, fábrica e terror. A campanha tem 45 desafios iniciais. Os corredores foram ampliados com áreas abertas para desviar das patrulhas.
+
+Vespas, golems, medusas, criaturas de lava, drones e espectros aparecem em posições aleatórias a cada nova partida ou reinício, com animações e sons próprios. Os inimigos patrulham na vertical ou na diagonal, respeitando paredes. Cada ataque desconta 30 pontos do setor, interrompe os comandos e devolve o robô à origem sem apagar pistas resolvidas. O saldo mínimo continua sendo zero. A origem fica protegida e o robô recebe proteção temporária após o ataque. As patrulhas pausam durante desafios, painéis e quando a aba está oculta.
+
 ## Jogar
 
 No celular, o jogo abre com o mapa ampliado e os comandos na parte inferior. O botão “Ampliar jogo” ativa esse modo em outras telas. O mapa acompanha o tamanho disponível na vertical e na horizontal. Os botões de avanço, giro, condição, repetição, execução e passo têm alvos maiores para toque. “Painel” volta à tela completa; o menu permite acessar os demais recursos.
