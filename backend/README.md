@@ -1,48 +1,62 @@
 # Backend — Supabase
 
-Esta pasta contém o código executado no Supabase: esquema do banco, funções RPC, políticas de acesso e publicação Realtime em `supabase/migrations/`. Os testes SQL ficam em `tests/`. Não há dependências Node ou um servidor HTTP para iniciar nesta pasta; o frontend consome as APIs do Supabase. Os comandos npm abaixo são executados na raiz do repositório.
+O backend é executado no Supabase. Esta pasta contém tabelas, funções RPC, políticas de acesso, publicação Realtime e testes SQL. Não há servidor Node adicional para iniciar. Os comandos npm são executados na raiz do repositório.
 
-A reorganização apenas move os arquivos existentes. Preserve os nomes e a ordem das migrações já aplicadas; não as execute novamente por terem mudado de pasta. As credenciais públicas usadas pelo navegador ficam em `frontend/.env`; nenhuma credencial administrativa deve ser adicionada ao frontend.
+## Ativar apelidos e reset da competição
 
-Esta etapa adiciona autenticação Supabase, cadastro de aluno/professor, status de aprovação e painel administrativo. O progresso da campanha continua local por conta; o ranking passa a ser compartilhado após aplicar a migração descrita abaixo. Não publicar como competição oficial: os gabaritos e as regras ainda estão no frontend.
+Se as três migrações anteriores já foram aplicadas, execute **somente** `backend/supabase/migrations/202611020002_nickname_competitions.sql` no SQL Editor do Supabase, inteiro e uma única vez.
 
-## Ranking compartilhado ao vivo
+**Essa migração inicia uma competição nova e limpa o ranking e as sessões de alunos anteriores.** A entrada de alunos por e-mail é desativada. Cadastros, senhas e aprovações de professores e administradores são preservados. Após o deploy, alunos entram novamente usando apenas um apelido.
 
-Com as duas migrações anteriores já aplicadas, execute **somente** `backend/supabase/migrations/202611020001_live_leaderboard.sql` no SQL Editor do Supabase. Execute o arquivo inteiro uma única vez. Ele cria a tabela de recordes, as permissões, a publicação Realtime e a sessão de envio para alunos sem senha. Não execute novamente as migrações antigas.
+O frontend e essa migração precisam estar atualizados. Sem a migração, a tela de entrada mostra o nome do arquivo necessário. Não repita migrações antigas.
 
-Após o deploy do site, alunos que já estavam conectados devem **sair e entrar novamente** para receber a sessão do ranking. O acesso continua por e-mail, sem senha. A sessão permite publicar por 90 dias; depois disso, basta entrar novamente. Professores usam a sessão normal do Supabase Auth.
+## Instalação em projeto novo
 
-O jogo envia a melhor pontuação disponível na conta deste navegador assim que o jogador entra e publica novos recordes em aproximadamente um segundo, enquanto houver conexão. Outros jogadores recebem as mudanças pelo Supabase Realtime sem recarregar a página. Há também uma consulta de recuperação a cada 10 segundos, ao reconectar e ao voltar à janela. O painel informa falhas de conexão, ausência da migração ou necessidade de entrar novamente. Recordes locais pendentes são reenviados enquanto a página estiver aberta ou quando a conta for aberta novamente neste navegador.
+1. Crie um projeto Supabase e execute os arquivos abaixo em ordem:
+   1. `backend/supabase/migrations/202610140001_profiles.sql`
+   2. `backend/supabase/migrations/202610140002_students_without_password.sql`
+   3. `backend/supabase/migrations/202611020001_live_leaderboard.sql`
+   4. `backend/supabase/migrations/202611020002_nickname_competitions.sql`
+2. Na raiz do repositório, copie `frontend/.env.example` para `frontend/.env` e preencha URL e chave publicável do projeto. Nunca use service_role/secret em variáveis VITE.
+3. Em Authentication, configure a URL final do site, as URLs de redirecionamento e a confirmação de e-mail para professores. Configure senha mínima de 8 caracteres no servidor.
+4. Execute `npm ci` e `npm run dev` na raiz. No Render, mantenha as duas variáveis públicas em Environment e faça um novo build após alterá-las.
 
-O banco mantém uma linha por jogador, banco de desafios e versão de pontuação. O melhor resultado vence; em empate, menos comandos vence. Reinícios e envios concorrentes não reduzem o recorde. Bancos de desafios diferentes têm classificações distintas. Cada jogador precisa abrir a versão atualizada do site para enviar seus resultados anteriores; não há como consultar o localStorage de outros dispositivos remotamente. O progresso da campanha não é sincronizado entre dispositivos.
+## Alunos: apenas apelido
 
-A leitura do ranking disponibiliza nomes e resultados aos visitantes do projeto, sem e-mails ou tokens. Escritas diretas são bloqueadas. A função de envio confere a sessão e obtém o nome no servidor. Como o jogo ainda calcula pontos no frontend e o acesso do aluno é didático, os resultados não têm validação antifraude no servidor.
+A função `enter_competition_student` cria ou retoma uma identificação no servidor, sem e-mail, senha ou cadastro separado. Apelidos têm 2 a 30 caracteres. Espaços extras e diferenças de maiúsculas são normalizados; o mesmo apelido na mesma rodada identifica o mesmo jogador. Oriente a turma a usar apelidos exclusivos.
 
-### Verificação após publicar
+O apelido e os recordes ficam no servidor. A sessão é lembrada no navegador e validada no servidor antes de abrir o jogo. Por ser um acesso didático sem senha, conhecer um apelido permite retomar aquela identificação. A campanha continua salva localmente, sem sincronização de posição entre dispositivos.
 
-1. Entre com dois alunos distintos em navegadores ou dispositivos diferentes, saindo e entrando novamente se necessário.
-2. Abra o ranking no segundo dispositivo e resolva uma pista no primeiro. A pontuação e a posição devem mudar sem recarregar a página.
-3. Reinicie a partida: o recorde deve permanecer. Em uma nova tentativa, só um resultado melhor substitui a marca.
-4. Desconecte temporariamente um dispositivo, melhore sua pontuação e reconecte. Confira o reenvio e a atualização no outro dispositivo.
-5. Confira no Supabase que `public.leaderboard` está na publicação `supabase_realtime`, configurada pela migração. Se o WebSocket não conectar, o painel indica reconexão e consulta a classificação a cada 10 segundos.
+A identidade do aluno não concede permissões de professor. Tabelas de participantes e tokens não têm leitura ou escrita direta liberada para os clientes. As funções conferem a sessão e o identificador da competição.
 
-Os testes de SQL em `backend/tests/leaderboard.sql` executam as migrações e verificam recordes, desempates, isolamento por desafios, permissões e sessões em um PostgreSQL vazio e descartável. **Não execute esse arquivo no Supabase de produção.**
+## Reiniciar todos os jogadores
 
-## Configuração
+Um **professor aprovado** encontra **Reiniciar competição** na barra lateral do painel ou no menu do modo ampliado. O administrador também possui o botão em seu painel. É necessário digitar `REINICIAR` e confirmar **Apagar e reiniciar todos**.
 
-1. Crie um projeto Supabase.
-2. Execute `backend/supabase/migrations/202610140001_profiles.sql` no SQL Editor do projeto.
-3. Na raiz do repositório, copie `frontend/.env.example` para `frontend/.env` e preencha URL e chave **publicável** (ou anon). Nunca use service_role/secret em variáveis VITE.
-4. Em Authentication, configure a URL do site, as URLs de redirecionamento e a política de confirmação de e-mail. Configure senha mínima de 8 caracteres também no servidor.
-5. Execute `npm install` e `npm run dev`.
+O reset é global para este projeto Supabase, incluindo todas as salas que o usam:
 
-## Falha de conexão ao entrar
+- Apaga todos os recordes, apelidos e sessões da competição atual.
+- Cria uma rodada nova e exige uma nova entrada dos alunos.
+- Faz alunos e professores começarem a campanha e a evolução individual do início, usando salvamentos separados por rodada.
+- Mantém as contas e aprovações dos professores e administradores.
 
-Se o console mostrar `ERR_NAME_NOT_RESOLVED` na chamada ao Supabase, confira se o projeto está ativo e copie novamente sua Project URL e chave publicável para `frontend/.env`. Os dois valores precisam pertencer ao mesmo projeto. Reinicie `npm run dev` após alterar o arquivo; em uma publicação, gere e publique um novo build. Se a URL estiver correta, verifique o DNS e a conexão local. Esse erro acontece antes de o banco receber a chamada e não é corrigido alterando senhas ou executando migrações.
+A ação não pode ser desfeita. Para competições simultâneas independentes por turma, seria necessário adicionar salas; o reset atual é único e global.
 
-## Administrador previamente cadastrado
+A função `reset_competition` verifica a autorização no servidor. Alunos, visitantes e professores pendentes ou revogados não podem executá-la. A rodada esperada evita resets duplicados. Reset, entrada de alunos e gravação de recordes usam bloqueios no mesmo registro, evitando corridas: envios de abas antigas e dispositivos offline são recusados após o reset, mesmo que ainda possuam pontuações locais.
 
-Crie o usuário administrativo em Authentication > Users com e-mail confirmado e metadados `{"name":"Administrador","role":"student"}`. Depois execute no SQL Editor, substituindo o UUID pelo identificador desse usuário:
+A mudança é recebida por Realtime; uma consulta a cada 5 segundos e a recuperação ao voltar à janela/rede cobrem eventos perdidos. Quando um aluno offline reconecta, precisa entrar na rodada atual. Os salvamentos locais anteriores ficam fora da rodada ativa e não são importados para o novo ranking.
+
+## Ranking ao vivo
+
+A tabela `leaderboard` guarda o melhor saldo por jogador, banco de desafios e versão de pontuação, apenas na rodada atual. Pontuação maior vence; em empate, menos comandos vence. Resultados idênticos compartilham posição. O upsert atômico impede que envios atrasados reduzam o recorde.
+
+Novos recordes são publicados em aproximadamente um segundo com conexão. Outros dispositivos recebem mudanças por Supabase Realtime; consultas a cada 10 segundos recuperam eventos perdidos. `leaderboard` e `competition_state` são incluídas na publicação `supabase_realtime` pelas migrações.
+
+Nomes e resultados do ranking são públicos para os visitantes do projeto; e-mails e tokens não fazem parte da tabela. Pontos ainda são calculados no frontend: a competição didática não possui validação antifraude das ações no servidor.
+
+## Administrador
+
+Crie o usuário em Authentication > Users com e-mail confirmado e metadados `{"name":"Administrador","role":"teacher"}`. Depois execute no SQL Editor, substituindo o UUID:
 
 ```sql
 update public.profiles
@@ -50,41 +64,27 @@ set role = 'admin', status = 'active'
 where id = 'UUID-DO-USUARIO';
 ```
 
-Essa operação é exclusiva da configuração confiável no servidor. Não há cadastro público de administrador. Não coloque a senha em arquivos do projeto. Usuários já existentes antes da migração precisam de perfil criado manualmente.
+Não há cadastro público de administrador. Não coloque senhas em arquivos do projeto. Professores se cadastram pela tela própria e aguardam aprovação no painel administrativo.
 
-## Verificação em um projeto de teste
+## Verificação após publicar
 
-- Cadastrar aluno e professor com e-mails distintos; confirmar e-mail se habilitado.
-- Aluno entra no jogo; professor recebe status pendente.
-- Entrar como administrador, aprovar professor e verificar liberação (a tela consulta o status a cada 15 segundos).
-- Recusar outro professor e revogar um aprovado; confirmar bloqueio após atualização.
-- Usando token de aluno, tentar UPDATE em profiles e RPC review_teacher: ambos devem falhar.
-- Alterar user_metadata para role=admin: o perfil e as permissões devem permanecer iguais.
-- Conferir que um aluno só consulta o próprio perfil e não pode ler teacher_reviews.
+1. Entre com dois alunos usando apelidos distintos, em navegadores diferentes, sem informar e-mail ou senha.
+2. Resolva uma pista e confira a atualização do ranking no outro navegador.
+3. Entre com um professor aprovado e clique em Reiniciar competição. Confira a confirmação antes de executar.
+4. Verifique se os dois alunos voltam à entrada e se o mesmo apelido inicia uma campanha e um ranking zerados na nova rodada.
+5. Confira que a conta do professor permanece ativa e que abas antigas não conseguem repor recordes.
+6. Repita com um aluno offline; ao reconectar, sua rodada anterior deve ser invalidada.
 
-A migração ainda precisa ser executada e validada em PostgreSQL/Supabase. Os testes locais não substituem essas verificações. O arquivo `backend/supabase/authorization-checks.sql` automatiza as principais negativas de acesso de aluno em um projeto de teste, dentro de uma transação com rollback.
+## Testes locais do banco
 
-## Próximas etapas
+`backend/tests/competition.sql` executa todas as migrações em um PostgreSQL vazio e descartável e verifica apelidos, sessões, ranking, aprovação de professores, reset global e bloqueio de resultados da rodada anterior:
 
-1. Mover perguntas/gabaritos e validação de ações para o backend.
-2. Criar partidas versionadas, gravação atômica e proteção contra reenvios/conflitos.
-3. Ampliar notificações em tempo real além do ranking compartilhado.
-4. Criar turmas, painel pedagógico e exportação/backup.
-5. Implementar recuperação de senha e testes de navegador/carga.
+```sh
+psql -v ON_ERROR_STOP=1 -f backend/tests/competition.sql DATABASE
+```
 
-Não importar pontuações locais como resultados oficiais. A recuperação completa de senha e a persistência online da campanha ainda não estão implementadas.
+**Não execute esse arquivo de testes no Supabase de produção.** Ele inclui o bootstrap dos testes anteriores (`leaderboard.sql`). `backend/supabase/authorization-checks.sql` contém verificações da autorização de alunos Auth da etapa anterior; o acesso atual dos alunos usa sessões de apelido.
 
-## Acesso simplificado de alunos (atualização)
+## Falha de conexão
 
-Execute **somente a nova migração** `backend/supabase/migrations/202610140002_students_without_password.sql` no SQL Editor, após a primeira migração já aplicada.
-
-- Cadastro do aluno: nome e e-mail, sem senha ou envio de confirmação. Após cadastrar, volta ao login.
-- Login do aluno: e-mail; recupera o cadastro sem duplicar ou alterar o nome existente.
-- Perfil lembrado neste navegador até sair. Esse perfil local não concede permissões de professor/administrador.
-- Alunos da versão anterior também podem entrar sem senha, preservando o identificador.
-- Professores e administrador continuam usando Supabase Auth e senha, com aprovação de professores.
-- E-mails são normalizados e o banco serializa cadastros concorrentes para impedir duplicação entre os novos alunos e contas Auth.
-- Acesso sem verificação de identidade é uma regra didática: conhecer o e-mail permite retomar o perfil. A tabela de alunos não é pública; a função retorna apenas o perfil consultado, sem e-mail.
-- O progresso continua local. O ranking compartilhado requer a migração adicional da seção “Ranking compartilhado ao vivo”.
-
-Valide no Supabase: cadastrar aluno, repetir e-mail com maiúsculas, retomar aluno antigo, tentar usar e-mail de professor no acesso de aluno e tentar cadastrar professor com e-mail já usado por aluno. Não execute novamente a migração inicial.
+Se aparecer `ERR_NAME_NOT_RESOLVED`, confira se o projeto está ativo e copie sua Project URL e chave publicável para `frontend/.env`, ambas do mesmo projeto. Reinicie o Vite ou faça um novo build no Render após alterar variáveis. Verifique também o DNS e a conexão local.

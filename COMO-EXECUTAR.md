@@ -29,7 +29,9 @@ O build gera `dist/` na raiz. O preview serve esse diretório. A configuração 
 
 ## Dados e acesso
 
-Alunos entram por e-mail. Professores usam senha e precisam de aprovação. O ranking é compartilhado pelo Supabase Realtime quando a migração correspondente já foi aplicada. Perguntas personalizadas e progresso da campanha continuam no navegador atual.
+Alunos entram apenas com um apelido, sem cadastro, e-mail ou senha. Professores usam senha e precisam de aprovação. O ranking é compartilhado pelo Supabase Realtime quando a migração correspondente já foi aplicada. Perguntas personalizadas e progresso da campanha continuam no navegador atual, separados por rodada.
+
+Professores aprovados encontram Reiniciar competição na barra lateral ou no menu do modo ampliado. A confirmação exige digitar REINICIAR. O reset apaga o ranking e os participantes de todas as salas deste projeto, exigindo uma nova entrada e uma campanha do início. As contas dos professores são mantidas.
 
 ## Controles
 

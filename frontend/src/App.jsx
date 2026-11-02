@@ -10,6 +10,7 @@ import {SequenceEditor} from './features/program/SequenceEditor.jsx';
 import {Tutorial,readTutorialSeen,saveTutorialSeen} from './features/learning/Tutorial.jsx';
 import {LearningProgress} from './features/learning/LearningProgress.jsx';
 import './features/learning/learning.css';
+import {CompetitionReset} from './features/competition/CompetitionReset.jsx';
 import {useLiveLeaderboard} from './useLiveLeaderboard.js';
 import {enterGameFullscreen,exitGameFullscreen,MOBILE_PLAY_QUERY,supportsGameFullscreen} from './display.js';
 
@@ -103,8 +104,8 @@ export function Ranking({rows,playerId,onClose,online=false,status=''}){
   <div className="ranking-footnote"><Icon name="bulb" size={17}/><p>O ranking guarda o melhor resultado e os comandos usados para obtê-lo. Reiniciar mantém essa marca. Em empate de pontos, vence quem usou menos comandos; se ambos forem iguais, a posição é compartilhada.</p></div>
  </Modal>;
 }
-export default function App({initialState,account,onLogout}){
- const accountStorage=typeof window==='undefined'?null:{getItem:()=>window.localStorage.getItem(`codigo-perdido-conta-${account?.id}`),setItem:(_key,value)=>window.localStorage.setItem(`codigo-perdido-conta-${account?.id}`,value)};
+export default function App({initialState,account,onLogout,onCompetitionReset}){
+ const accountStorage=typeof window==='undefined'?null:{getItem:()=>window.localStorage.getItem(`codigo-perdido-conta-${account?.id}:${account?.competition_id}`),setItem:(_key,value)=>window.localStorage.setItem(`codigo-perdido-conta-${account?.id}:${account?.competition_id}`,value)};
  const [store,setStore]=useState(()=>{if(account){let existing;try{existing=readPlayers(accountStorage);}catch{existing=emptyPlayers();}if(existing.players.some(p=>p.id===account.id))return existing;const state=freshGame();return {...emptyPlayers(),players:[{id:account.id,givenName:'Conta',familyName:'Online',campaign:campaignData(state),best:{scoringVersion:SCORING_VERSION,score:0,commands:0,clues:0,completed:0}}]};}if(initialState)return {...emptyPlayers(initialState.questions),pendingLegacy:campaignData(initialState)};if(typeof window==='undefined')return emptyPlayers();try{return readPlayers(window.localStorage);}catch{return emptyPlayers();}});
  const [playerId,setPlayerId]=useState(account?.id??null),[saveError,setSaveError]=useState(false);
  const player=store.players.find(p=>p.id===playerId);
@@ -113,7 +114,7 @@ export default function App({initialState,account,onLogout}){
  useEffect(()=>{if(!store.players.length)return;try{setSaveError(!savePlayers(account?accountStorage:window.localStorage,store));}catch{setSaveError(true);}},[store]);
  const enter=(given,family)=>{const result=joinPlayer(store,given,family);setStore(result.store);setPlayerId(result.playerId);};
  if(!player)return <PlayerEntry onEnter={enter} hasLegacy={!!store.pendingLegacy}/>;
- return <GameClient key={player.id} initialState={restoreCampaign(player.campaign)} player={account?{...player,givenName:account.name,familyName:''}:player} canManageQuestions={!account||account.role==='teacher'} ranking={account?liveRanking.rows:rankingRows(store,player.campaign.questions)} rankingOnline={!!account} rankingStatus={liveRanking.status} onProgress={progress} onSwitchPlayer={account?onLogout:()=>setPlayerId(null)} saveError={saveError}/>;
+ return <GameClient key={player.id} initialState={restoreCampaign(player.campaign)} player={account?{...player,givenName:account.name,familyName:''}:player} competitionId={account?.competition_id} canResetCompetition={account?.role==='teacher'&&account.status==='active'} onCompetitionReset={onCompetitionReset} canManageQuestions={!account||account.role==='teacher'} ranking={account?liveRanking.rows:rankingRows(store,player.campaign.questions)} rankingOnline={!!account} rankingStatus={liveRanking.status} onProgress={progress} onSwitchPlayer={account?onLogout:()=>setPlayerId(null)} saveError={saveError}/>;
 }
 export function PlayControls({state,dispatch,repeat,setRepeat}){
  const run=state.runs[state.level],blocked=state.running||!!state.active||run.completed||!!run.impact;
@@ -123,8 +124,10 @@ export function PlayControls({state,dispatch,repeat,setRepeat}){
   <div className="play-execution"><div className="play-loop"><select aria-label="Quantidade de avanços na repetição" value={repeat} onChange={e=>setRepeat(Number(e.target.value))} disabled={blocked}>{[2,3,4,5,6,7,8].map(n=><option key={n} value={n}>{n}×</option>)}</select><button disabled={blocked||state.queue.length>=30} onClick={()=>dispatch({type:'ADD',command:'forward',repeat})} aria-label={`Adicionar repetição de ${repeat} avanços`}><Icon name="loop" size={19}/><span>Repetir</span></button></div><button className="primary play-run" disabled={!state.queue.length||!!state.active||run.completed} onClick={()=>dispatch({type:state.running?'STOP':'START'})}><Icon name={state.running?'pause':'play'} size={19}/>{state.running?'Pausar':'Executar'}</button><button className="secondary play-step" disabled={state.running||!state.queue.length||!!state.active||run.completed} onClick={()=>dispatch({type:'STEP'})}><Icon name="step" size={18}/><span>Passo</span></button></div>
  </section>;
 }
-export function GameClient({initialState,player,ranking=[],rankingOnline=false,rankingStatus='',onProgress=()=>{},onSwitchPlayer=()=>{},saveError=false,initialFocusMode,canManageQuestions=true}){
+export function GameClient({initialState,player,ranking=[],rankingOnline=false,rankingStatus='',onProgress=()=>{},onSwitchPlayer=()=>{},saveError=false,initialFocusMode,canManageQuestions=true,competitionId,canResetCompetition=false,onCompetitionReset}){
  const [state,dispatch]=useReducer(gameReducer,initialState,seed=>seed||freshGame());
+ const [competitionResetOpen,setCompetitionResetOpen]=useState(false);
+ const resetDialogChanged=open=>{setCompetitionResetOpen(open);if(open)dispatch({type:'STOP'});};
  useGameSounds(state);
  useAudioScene(LEVEL_INFO[state.level].theme);
  const [modal,setModal]=useState(()=>!readTutorialSeen(player.id)&&!state.runs.some(r=>r.commands>0||r.solved.length>0)?'tutorial':null),[confirmation,setConfirmation]=useState(null),[repeat,setRepeat]=useState(3),[compact,setCompact]=useState(()=>typeof window!=='undefined'&&window.matchMedia(MOBILE_PLAY_QUERY).matches),[speed,setSpeed]=useState(450);
@@ -141,15 +144,15 @@ export function GameClient({initialState,player,ranking=[],rankingOnline=false,r
  },[run.impact]);
  useEffect(()=>{onProgress(state);},[state.runs,state.questions,state.level,state.unlocked,onProgress]);
  useEffect(()=>{
-  if(modal||confirmation||state.active||state.runs[state.level].completed||run.impact)return;
+  if(modal||confirmation||competitionResetOpen||state.active||state.runs[state.level].completed||run.impact)return;
   const timer=setInterval(()=>{if(!document.hidden)dispatch({type:'ENEMY_TICK'});},600);
   return()=>clearInterval(timer);
- },[modal,confirmation,state.active,state.level,state.runs[state.level].completed,run.impact]);
+ },[modal,confirmation,competitionResetOpen,state.active,state.level,state.runs[state.level].completed,run.impact]);
  useEffect(()=>{if(!state.running)return;const timer=setTimeout(()=>dispatch({type:'TICK'}),speed);return()=>clearTimeout(timer);},[state.running,state.queue,speed]);
  useEffect(()=>{
-  const listener=e=>{if(!modal&&!confirmation&&!state.active&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();dispatch({type:'UNDO_QUEUE'});return;}if(modal||confirmation||state.active||/INPUT|TEXTAREA|SELECT|BUTTON/.test(e.target.tagName)||e.ctrlKey||e.altKey||e.metaKey)return;const cmd={ArrowUp:'forward',ArrowLeft:'left',ArrowRight:'right',c:'if',C:'if'}[e.key];if(cmd){e.preventDefault();if(!e.repeat)dispatch({type:'ADD',command:cmd});}if(e.key==='Enter'){e.preventDefault();dispatch({type:'START'});}if(e.key===' '){e.preventDefault();dispatch({type:'STEP'});}};
+  const listener=e=>{if(!modal&&!confirmation&&!competitionResetOpen&&!state.active&&!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName)&&(e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();dispatch({type:'UNDO_QUEUE'});return;}if(modal||confirmation||competitionResetOpen||state.active||/INPUT|TEXTAREA|SELECT|BUTTON/.test(e.target.tagName)||e.ctrlKey||e.altKey||e.metaKey)return;const cmd={ArrowUp:'forward',ArrowLeft:'left',ArrowRight:'right',c:'if',C:'if'}[e.key];if(cmd){e.preventDefault();if(!e.repeat)dispatch({type:'ADD',command:cmd});}if(e.key==='Enter'){e.preventDefault();dispatch({type:'START'});}if(e.key===' '){e.preventDefault();dispatch({type:'STEP'});}};
   window.addEventListener('keydown',listener);return()=>window.removeEventListener('keydown',listener);
- },[modal,confirmation,state.active]);
+ },[modal,confirmation,competitionResetOpen,state.active]);
  const confirm=(title,description,action)=>{dispatch({type:'STOP'});setConfirmation({title,description,action});};
  const openModal=name=>{if(name==='questions'&&!canManageQuestions)return;dispatch({type:'STOP'});setModal(name);};
  const add=(command,n=1)=>dispatch({type:'ADD',command,repeat:n});
@@ -169,7 +172,7 @@ export function GameClient({initialState,player,ranking=[],rankingOnline=false,r
     <div className="campaign-heading"><span className="sidebar-group-label">OS SEIS SETORES</span><span className="mono small">{state.runs.filter(r=>r.completed).length}/{LEVEL_INFO.length}</span></div>
     <nav className="level-list" aria-label="Mapas da campanha">{LEVEL_INFO.map((level,i)=>{const locked=i>state.unlocked,done=state.runs[i].completed;return <button key={i} className={`level-item ${i===state.level?'selected':''} ${locked?'locked':''}`} disabled={locked||state.running} onClick={()=>dispatch({type:'LEVEL',level:i})} aria-current={i===state.level?'step':undefined}><span className="level-number">{done?<Icon name="check" size={17}/>:locked?<Icon name="lock" size={15}/>:String(i+1).padStart(2,'0')}</span><span className="level-text"><strong>{level.place}</strong><small>{done?'Investigação concluída':locked?'Conclua o setor anterior':i===state.level?'Investigação em curso':'Pronto para explorar'}</small></span>{i===state.level&&<span className="selected-dot"/>}</button>;})}</nav>
     <div className="mission-brief"><div className="robot-id"><Robot/><span>DETETIVE<br/><strong>R-07</strong></span><span className="online-dot"/></div><p>“Toda pista tem uma lógica.<br/>Vamos encontrar a próxima?”</p><div className="agent-status"><span>SISTEMA OPERACIONAL</span><span className="live-dot"/></div></div>
-    <div className="sidebar-bottom"><button hidden={!canManageQuestions} className="sidebar-link" onClick={()=>openModal('questions')}><Icon name="settings"/><span>Banco de desafios</span></button><div className="saved-note"><Icon name="check" size={13}/>{saveError?'Salvamento indisponível':'Progresso salvo neste navegador'}</div></div>
+    <div className="sidebar-bottom">{canResetCompetition&&<CompetitionReset competitionId={competitionId} onReset={onCompetitionReset} onOpenChange={resetDialogChanged}/>}<button hidden={!canManageQuestions} className="sidebar-link" onClick={()=>openModal('questions')}><Icon name="settings"/><span>Banco de desafios</span></button><div className="saved-note"><Icon name="check" size={13}/>{saveError?'Salvamento indisponível':'Progresso salvo neste navegador'}</div></div>
    </aside>
    <main id="main" className="main-content"><div className="mission-heading"><div><div className="eyebrow breadcrumb">MISSÃO 0{state.level+1}<span>/</span>{info.topic}</div><h1>{info.name}<span className="title-dot">.</span></h1><p>Explore. Programe. Decifre o próximo passo.</p></div><div className="score-chip"><span className="score-icon"><Icon name="trophy" size={22}/></span><div><span className="score-label">PONTUAÇÃO TOTAL</span><strong>{total.toLocaleString('pt-BR')}<small> pts</small></strong></div></div></div>
     <div className="game-layout"><section className="field-column" aria-label="Área de exploração"><div className="map-panel"><div className="map-toolbar"><span className="live-label"><span className="live-dot"/>EXPLORAÇÃO AO VIVO</span><span className="sector-dim">SETOR 0{state.level+1}<span>·</span>{map.size} × {map.size}</span></div>
@@ -190,7 +193,7 @@ export function GameClient({initialState,player,ranking=[],rankingOnline=false,r
   {state.active&&<QuestionCard key={state.active} state={state} dispatch={dispatch}/>}
   {modal==='play-menu'&&<Modal title="Sua investigação" eyebrow={`SETOR 0${state.level+1} · ${player.givenName}`} onClose={()=>setModal(null)}>
    <p className="muted">{state.message}</p><LearningProgress record={player.learning?.[state.level]} run={run}/>
-   <div className="play-menu-grid"><button className="secondary" onClick={()=>openModal('notebook')}><Icon name="book"/>Pistas</button><button className="secondary" onClick={()=>openModal('ranking')}><Icon name="trophy"/>Ranking</button><button className="secondary" onClick={()=>openModal('help')}><Icon name="help"/>Como jogar</button><button hidden={!canManageQuestions} className="secondary" onClick={()=>openModal('questions')}><Icon name="settings"/>Desafios</button><button className="secondary" onClick={()=>confirm('Reiniciar este mapa?','A pontuação e o progresso deste mapa e dos mapas seguintes serão apagados. Suas perguntas serão mantidas.',()=>{dispatch({type:'RESTART'});setModal(null);})}><Icon name="loop"/>Reiniciar mapa</button><button className="secondary" onClick={switchPlayer}><Icon name="compass"/>Trocar jogador</button></div>
+   {canResetCompetition&&<CompetitionReset competitionId={competitionId} onReset={onCompetitionReset} onOpenChange={resetDialogChanged}/>}<div className="play-menu-grid"><button className="secondary" onClick={()=>openModal('notebook')}><Icon name="book"/>Pistas</button><button className="secondary" onClick={()=>openModal('ranking')}><Icon name="trophy"/>Ranking</button><button className="secondary" onClick={()=>openModal('help')}><Icon name="help"/>Como jogar</button><button hidden={!canManageQuestions} className="secondary" onClick={()=>openModal('questions')}><Icon name="settings"/>Desafios</button><button className="secondary" onClick={()=>confirm('Reiniciar este mapa?','A pontuação e o progresso deste mapa e dos mapas seguintes serão apagados. Suas perguntas serão mantidas.',()=>{dispatch({type:'RESTART'});setModal(null);})}><Icon name="loop"/>Reiniciar mapa</button><button className="secondary" onClick={switchPlayer}><Icon name="compass"/>Trocar jogador</button></div>
    <label className="play-menu-field">Setor<select value={state.level} onChange={e=>{dispatch({type:'LEVEL',level:Number(e.target.value)});setModal(null);}}>{LEVEL_INFO.map((level,i)=><option key={i} value={i} disabled={i>state.unlocked}>0{i+1} · {level.place}{i>state.unlocked?' · bloqueado':''}</option>)}</select></label>
    <label className="play-menu-field">Velocidade<select value={speed} onChange={e=>setSpeed(Number(e.target.value))}><option value={800}>Com calma</option><option value={450}>Normal</option><option value={180}>Rápida</option></select></label>
    <div className="modal-footer"><button className="secondary" onClick={()=>{setModal(null);void leaveFocus();}}>Painel completo</button><button className="primary" onClick={()=>setModal(null)}>Voltar ao jogo</button></div>

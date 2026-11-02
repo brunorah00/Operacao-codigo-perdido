@@ -1,20 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {enterStudent,readStudent} from '../src/services/students.js';
-
-test('Student registration normalizes email and never sends a password or calls Auth',async()=>{
- const profile={id:'student-id',name:'Maria Eloisa',role:'student',status:'active'};
- const client={rpc:async(name,args)=>{assert.equal(name,'enter_student');assert.deepEqual(args,{student_name:'Maria Eloisa',student_email:'eloisa@example.com',create_account:true});return {data:profile};}};
- assert.deepEqual(await enterStudent(client,{name:' Maria Eloisa ',email:' ELOISA@EXAMPLE.COM ',createAccount:true}),profile);
+import {enterStudent,readStudent,verifyStudent} from '../src/services/students.js';
+const profile={id:'student-id',name:'Robo Azul',role:'student',status:'active',competition_id:'round-1',ranking_token:'private-token'};
+test('Student enters with a nickname only, without email, password or Auth',async()=>{
+ const client={rpc:async(name,args)=>{assert.equal(name,'enter_competition_student');assert.deepEqual(args,{nickname:'Robo Azul'});return {data:profile};}};
+ assert.deepEqual(await enterStudent(client,{nickname:'  Robo Azul  '}),profile);
 });
-test('Student login only resumes existing students and preserves migration errors',async()=>{
- const client={rpc:async(_name,args)=>{assert.equal(args.create_account,false);assert.equal(args.student_name,'');return {error:{code:'PGRST202'}};}};
- await assert.rejects(()=>enterStudent(client,{email:'aluno@example.com'}),/202610140002/);
- await assert.rejects(()=>enterStudent({rpc:async()=>({data:{id:'admin',name:'Admin',role:'admin',status:'active'}})},{email:'admin@example.com'}),/perfil do aluno/);
+test('Nickname access reports the current migration and rejects malformed identities',async()=>{
+ await assert.rejects(()=>enterStudent({rpc:async()=>({error:{code:'PGRST202'}})},{nickname:'Ana'}),/202611020002/);
+ await assert.rejects(()=>enterStudent({rpc:async()=>({data:{...profile,role:'admin'}})},{nickname:'Ana'}),/perfil do aluno/);
 });
-test('Local student identity rejects malformed data and other roles',()=>{
- for(const value of ['broken',JSON.stringify({id:'x',name:'Admin',role:'admin',status:'active'}),'null'])assert.equal(readStudent({getItem:()=>value}),null);
- const profile={id:'x',name:'Aluno',role:'student',status:'active'};
+test('Saved student sessions require a competition and session token',()=>{
+ for(const value of ['broken','null',JSON.stringify({...profile,role:'admin'}),JSON.stringify({id:'old',name:'Aluno',role:'student',status:'active'})])assert.equal(readStudent({getItem:()=>value}),null);
  assert.deepEqual(readStudent({getItem:()=>JSON.stringify(profile)}),profile);
  assert.equal(readStudent({getItem(){throw Error('denied');}}),null);
+});
+test('Server verifies saved sessions before restoring access',async()=>{
+ const client={rpc:async(name,args)=>{assert.equal(name,'get_competition_student');assert.deepEqual(args,{p_player_id:profile.id,p_student_token:profile.ranking_token,p_competition_id:profile.competition_id});return {data:profile};}};
+ assert.deepEqual(await verifyStudent(client,profile),profile);
+ await assert.rejects(()=>verifyStudent({rpc:async()=>({error:{code:'42501',message:'Reset'}})},profile),{code:'42501'});
 });

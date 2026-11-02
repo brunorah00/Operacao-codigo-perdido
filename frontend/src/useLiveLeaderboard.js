@@ -23,7 +23,7 @@ export function useLiveLeaderboard(account,player){
    if(latest.current)sync.update(latest.current);
   }).catch(error=>{if(!cancelled)setResult({signature,rows:[],status:rankingError(error)});});
   return()=>{cancelled=true;sync?.stop();connection.current=null;};
- },[account?.id,account?.ranking_token,signature]);
+ },[account?.id,account?.ranking_token,account?.competition_id,signature]);
  useEffect(()=>{if(player?.best)connection.current?.update(player.best);},[player?.best]);
  return result.signature===signature?result:{rows:[],status:'Conectando ao ranking online…'};
 }

@@ -11,7 +11,7 @@ function fixture(){
  const client={from(name){assert.equal(name,'leaderboard');return query;},channel(){return channel;},removeChannel(){removed=true;},async rpc(name,args){assert.equal(name,'submit_leaderboard');writes.push(args);return failWrite?{error:{message:'offline'}}:{};}};
  const scheduler={setInterval(fn,ms){timers.set(ms,fn);return ms;},clearInterval(ms){timers.delete(ms);}};
  const observed=[],statuses=[];
- const sync=connectLeaderboard(client,{account:{id:'a',ranking_token:'private-session'},bankKey:'abc',scoringVersion:3,onRows:value=>observed.push(value),onStatus:value=>statuses.push(value)},scheduler);
+ const sync=connectLeaderboard(client,{account:{id:'a',competition_id:'round-1',ranking_token:'private-session'},bankKey:'abc',scoringVersion:3,onRows:value=>observed.push(value),onStatus:value=>statuses.push(value)},scheduler);
  return {sync,rows,writes,observed,statuses,timers,change:()=>changed(),subscribe:value=>subscription(value),setFailWrite:value=>{failWrite=value;},setFailRead:value=>{failRead=value;},removed:()=>removed};
 }
 const best=score=>({scoringVersion:3,score,commands:2,clues:1,completed:0});
@@ -39,7 +39,7 @@ test('publishing coalesces rapid progress and retries after a network failure',a
  const f=fixture();await settle();
  f.sync.update(best(100));f.sync.update(best(200));f.setFailWrite(true);
  f.timers.get(1000)();await settle();
- assert.equal(f.writes.at(-1).p_score,200);assert.equal(f.writes.at(-1).p_student_token,'private-session');
+ assert.equal(f.writes.at(-1).p_score,200);assert.equal(f.writes.at(-1).p_student_token,'private-session');assert.equal(f.writes.at(-1).p_competition_id,'round-1');
  assert.match(f.statuses.at(-1),/conexão/);
  f.setFailWrite(false);f.timers.get(1000)();await settle();
  assert.equal(f.writes.length,2);

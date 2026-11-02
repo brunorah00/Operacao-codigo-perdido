@@ -53,11 +53,13 @@ Os comandos são encaminhados ao workspace `frontend`. O build gera `dist/` na r
 
 ## Backend e dados
 
-Configure o Supabase conforme [backend/README.md](backend/README.md). As migrações existentes apenas mudaram de pasta: se já foram aplicadas, não as execute novamente. Esta reorganização não exige migração de dados nem alteração das variáveis cadastradas no Render.
+Configure o Supabase conforme [backend/README.md](backend/README.md). Não repita as migrações já aplicadas. A entrada por apelido e o reset global exigem a nova migração `202611020002_nickname_competitions.sql`, que inicia uma rodada nova e limpa o ranking anterior. As variáveis cadastradas no Render continuam iguais.
 
-Alunos entram por e-mail, sem senha, no fluxo didático. Professores usam senha e aprovação administrativa. O ranking compartilha o melhor resultado entre jogadores com o mesmo banco de desafios e versão de pontuação; empates são resolvidos pelo menor número de comandos. Resultados idênticos compartilham posição.
+Alunos entram apenas com um apelido, salvo no servidor, sem e-mail, senha ou cadastro separado. Professores usam senha e aprovação administrativa. O ranking compartilha o melhor resultado entre jogadores com o mesmo banco de desafios e versão de pontuação; empates são resolvidos pelo menor número de comandos. Resultados idênticos compartilham posição.
 
-O progresso da campanha e as perguntas personalizadas ficam no navegador. Publicar o site ou sincronizar o ranking não transfere a campanha entre dispositivos. Os recordes ainda são calculados pelo frontend.
+Professores aprovados e administradores podem usar **Reiniciar competição** para apagar o ranking, remover os participantes e iniciar uma nova rodada para todas as salas. As contas dos professores são preservadas; abas antigas não podem reenviar resultados da rodada anterior. Veja a ativação da migração `202611020002_nickname_competitions.sql` em [backend/README.md](backend/README.md).
+
+O progresso da campanha e as perguntas personalizadas ficam no navegador, separados por rodada. Publicar o site ou sincronizar o ranking não transfere a campanha entre dispositivos. Os recordes ainda são calculados pelo frontend.
 
 ## Jogo
 
@@ -76,4 +78,4 @@ No celular, o mapa abre ampliado com controles de toque. O menu permite acessar 
 
 ## Validação
 
-`npm test` verifica o motor do jogo, persistência local, pontuação, inimigos, áudio, exibição e clientes de cadastro e ranking. Os testes SQL em `backend/tests/leaderboard.sql` verificam migrações e autorizações em PostgreSQL vazio e descartável. Não execute esse arquivo de testes no Supabase de produção.
+`npm test` verifica o motor do jogo, persistência local, pontuação, inimigos, áudio, exibição e clientes de cadastro e ranking. Os testes SQL em `backend/tests/competition.sql` verificam migrações e autorizações em PostgreSQL vazio e descartável. Não execute esse arquivo de testes no Supabase de produção.

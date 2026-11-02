@@ -35,7 +35,7 @@ Em **Environment**, adicione `NODE_VERSION=24` e as duas variáveis do Supabase 
 3. Abra o site publicado e teste cadastro e entrada de aluno, login de professor e acesso administrativo com contas de teste.
 4. Recarregue a página e confira se o site continua abrindo.
 
-O progresso da campanha continua no navegador. Para ativar o ranking compartilhado ao vivo, execute a migração `backend/supabase/migrations/202611020001_live_leaderboard.sql` conforme [backend/README.md](backend/README.md). Alunos já conectados precisam sair e entrar novamente após essa atualização.
+O progresso da campanha continua no navegador. Para ativar a entrada por apelido e o reset global, execute a nova migração `backend/supabase/migrations/202611020002_nickname_competitions.sql` após as anteriores, conforme [backend/README.md](backend/README.md). Essa migração inicia uma rodada nova, limpa o ranking anterior e exige nova entrada dos alunos. Cadastros de professores são preservados.
 
 Com o deploy automático habilitado, novos pushes na branch vinculada geram novas publicações.
 

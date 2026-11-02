@@ -13,7 +13,7 @@ export function orderLeaderboard(rows){
 }
 
 export function rankingError(error){
- if(['PGRST202','PGRST205','42P01','42883'].includes(error?.code))return 'Ranking online indisponível: aplique a migração 202611020001_live_leaderboard.sql no Supabase.';
+ if(['PGRST202','PGRST205','42P01','42883'].includes(error?.code))return 'Ranking online indisponível: aplique a migração 202611020002_nickname_competitions.sql no Supabase.';
  if(error?.code==='42501')return 'Para sincronizar seu ranking, saia da conta e entre novamente.';
  return 'Não foi possível sincronizar o ranking. Tentaremos novamente quando a conexão voltar.';
 }
@@ -32,7 +32,7 @@ export function connectLeaderboard(client,{account,bankKey,scoringVersion,onRows
    const rows=[];
    for(let start=0;;start+=1000){
     const {data,error}=await client.from('leaderboard').select('player_id,name,score,commands,clues,completed')
-     .eq('bank_key',bankKey).eq('scoring_version',scoringVersion)
+     .eq('bank_key',bankKey).eq('scoring_version',scoringVersion).eq('competition_id',account.competition_id)
      .order('score',{ascending:false}).order('commands').order('player_id').range(start,start+999);
     if(error)throw error;
     rows.push(...data);
@@ -48,7 +48,7 @@ export function connectLeaderboard(client,{account,bankKey,scoringVersion,onRows
   writing=true;
   try{
    const {error}=await client.rpc('submit_leaderboard',{
-    p_player_id:account.id,p_bank_key:bankKey,p_scoring_version:scoringVersion,
+    p_player_id:account.id,p_competition_id:account.competition_id,p_bank_key:bankKey,p_scoring_version:scoringVersion,
     p_score:best.score,p_commands:best.commands,p_clues:best.clues,p_completed:best.completed,
     p_student_token:account.ranking_token||null
    });
