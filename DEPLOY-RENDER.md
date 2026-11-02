@@ -35,7 +35,7 @@ Em **Environment**, adicione `NODE_VERSION=24` e as duas variáveis do Supabase 
 3. Abra o site publicado e teste cadastro e entrada de aluno, login de professor e acesso administrativo com contas de teste.
 4. Recarregue a página e confira se o site continua abrindo.
 
-Progresso e ranking ainda ficam no navegador; publicar o site não sincroniza esses dados entre dispositivos.
+O progresso da campanha continua no navegador. Para ativar o ranking compartilhado ao vivo, execute a migração `supabase/migrations/202611020001_live_leaderboard.sql` conforme [BACKEND.md](BACKEND.md). Alunos já conectados precisam sair e entrar novamente após essa atualização.
 
 Com o deploy automático habilitado, novos pushes na branch vinculada geram novas publicações.
 

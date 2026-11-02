@@ -1,6 +1,28 @@
 # Backend — primeira etapa
 
-Esta etapa adiciona autenticação Supabase, cadastro de aluno/professor, status de aprovação e painel administrativo. O jogo ainda usa progresso e ranking locais por conta. Não publicar como competição oficial: os gabaritos e as regras ainda estão no frontend.
+Esta etapa adiciona autenticação Supabase, cadastro de aluno/professor, status de aprovação e painel administrativo. O progresso da campanha continua local por conta; o ranking passa a ser compartilhado após aplicar a migração descrita abaixo. Não publicar como competição oficial: os gabaritos e as regras ainda estão no frontend.
+
+## Ranking compartilhado ao vivo
+
+Com as duas migrações anteriores já aplicadas, execute **somente** `supabase/migrations/202611020001_live_leaderboard.sql` no SQL Editor do Supabase. Execute o arquivo inteiro uma única vez. Ele cria a tabela de recordes, as permissões, a publicação Realtime e a sessão de envio para alunos sem senha. Não execute novamente as migrações antigas.
+
+Após o deploy do site, alunos que já estavam conectados devem **sair e entrar novamente** para receber a sessão do ranking. O acesso continua por e-mail, sem senha. A sessão permite publicar por 90 dias; depois disso, basta entrar novamente. Professores usam a sessão normal do Supabase Auth.
+
+O jogo envia a melhor pontuação disponível na conta deste navegador assim que o jogador entra e publica novos recordes em aproximadamente um segundo, enquanto houver conexão. Outros jogadores recebem as mudanças pelo Supabase Realtime sem recarregar a página. Há também uma consulta de recuperação a cada 10 segundos, ao reconectar e ao voltar à janela. O painel informa falhas de conexão, ausência da migração ou necessidade de entrar novamente. Recordes locais pendentes são reenviados enquanto a página estiver aberta ou quando a conta for aberta novamente neste navegador.
+
+O banco mantém uma linha por jogador, banco de desafios e versão de pontuação. O melhor resultado vence; em empate, menos comandos vence. Reinícios e envios concorrentes não reduzem o recorde. Bancos de desafios diferentes têm classificações distintas. Cada jogador precisa abrir a versão atualizada do site para enviar seus resultados anteriores; não há como consultar o localStorage de outros dispositivos remotamente. O progresso da campanha não é sincronizado entre dispositivos.
+
+A leitura do ranking disponibiliza nomes e resultados aos visitantes do projeto, sem e-mails ou tokens. Escritas diretas são bloqueadas. A função de envio confere a sessão e obtém o nome no servidor. Como o jogo ainda calcula pontos no frontend e o acesso do aluno é didático, os resultados não têm validação antifraude no servidor.
+
+### Verificação após publicar
+
+1. Entre com dois alunos distintos em navegadores ou dispositivos diferentes, saindo e entrando novamente se necessário.
+2. Abra o ranking no segundo dispositivo e resolva uma pista no primeiro. A pontuação e a posição devem mudar sem recarregar a página.
+3. Reinicie a partida: o recorde deve permanecer. Em uma nova tentativa, só um resultado melhor substitui a marca.
+4. Desconecte temporariamente um dispositivo, melhore sua pontuação e reconecte. Confira o reenvio e a atualização no outro dispositivo.
+5. Confira no Supabase que `public.leaderboard` está na publicação `supabase_realtime`, configurada pela migração. Se o WebSocket não conectar, o painel indica reconexão e consulta a classificação a cada 10 segundos.
+
+Os testes de SQL em `tests/leaderboard.sql` executam as migrações e verificam recordes, desempates, isolamento por desafios, permissões e sessões em um PostgreSQL vazio e descartável. **Não execute esse arquivo no Supabase de produção.**
 
 ## Configuração
 
@@ -42,7 +64,7 @@ A migração ainda precisa ser executada e validada em PostgreSQL/Supabase. Os t
 
 1. Mover perguntas/gabaritos e validação de ações para o backend.
 2. Criar partidas versionadas, gravação atômica e proteção contra reenvios/conflitos.
-3. Implementar ranking compartilhado e notificações em tempo real.
+3. Ampliar notificações em tempo real além do ranking compartilhado.
 4. Criar turmas, painel pedagógico e exportação/backup.
 5. Implementar recuperação de senha e testes de navegador/carga.
 
@@ -59,6 +81,6 @@ Execute **somente a nova migração** `supabase/migrations/202610140002_students
 - Professores e administrador continuam usando Supabase Auth e senha, com aprovação de professores.
 - E-mails são normalizados e o banco serializa cadastros concorrentes para impedir duplicação entre os novos alunos e contas Auth.
 - Acesso sem verificação de identidade é uma regra didática: conhecer o e-mail permite retomar o perfil. A tabela de alunos não é pública; a função retorna apenas o perfil consultado, sem e-mail.
-- Ranking e progresso continuam locais nesta etapa; o ranking compartilhado ainda precisa ser implementado.
+- O progresso continua local. O ranking compartilhado requer a migração adicional da seção “Ranking compartilhado ao vivo”.
 
 Valide no Supabase: cadastrar aluno, repetir e-mail com maiúsculas, retomar aluno antigo, tentar usar e-mail de professor no acesso de aluno e tentar cadastrar professor com e-mail já usado por aluno. Não execute novamente a migração inicial.

@@ -1,6 +1,6 @@
 # Operação: Código Perdido
 
-**Backend em implantação:** a entrada agora usa cadastro e login Supabase, com aprovação administrativa de professores. Consulte [BACKEND.md](BACKEND.md) para configurar banco, variáveis e administrador. As descrições abaixo sobre identificação por nome referem-se à versão local anterior. Progresso e ranking ainda são locais nesta etapa.
+**Backend:** a entrada usa cadastro e login Supabase, com aprovação administrativa de professores. O ranking é compartilhado ao vivo entre jogadores após aplicar a migração `202611020001_live_leaderboard.sql`; consulte [BACKEND.md](BACKEND.md) para ativá-lo e configurar o banco. O progresso da campanha continua local. As descrições abaixo sobre identificação por nome e ranking local referem-se à versão local anterior.
 
 
 Jogo educacional em React e Vite para ensino médio. Esta implementação independente preserva a proposta do robô detetive; o código do projeto anterior não estava disponível na sessão.

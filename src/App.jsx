@@ -1,10 +1,11 @@
 import {HIT_ANIMATION_MS} from './enemies.js';
 import {AudioControls,useGameSounds,useAudioScene} from './audio/AudioProvider.jsx';
 import React,{useCallback,useEffect,useId,useMemo,useReducer,useRef,useState} from 'react';
-import {createMap,DIR_NAMES,freshGame,gameReducer,sectorScore,totalScore} from './engine.js';
+import {createMap,DIR_NAMES,freshGame,gameReducer,SCORING_VERSION,sectorScore,totalScore} from './engine.js';
 import {campaignData,emptyPlayers,joinPlayer,rankingRows,readPlayers,recordProgress,restoreCampaign,savePlayers} from './players.js';
 import {DEFAULT_QUESTIONS,LEVEL_INFO,validateQuestions} from './questions.js';
 import {GameMap,Icon,MiniMap,Robot} from './visuals.jsx';
+import {useLiveLeaderboard} from './useLiveLeaderboard.js';
 import {enterGameFullscreen,exitGameFullscreen,MOBILE_PLAY_QUERY,supportsGameFullscreen} from './display.js';
 
 const COMMANDS={forward:{label:'Avançar',icon:'arrow',code:'AVANCE',key:'↑'},left:{label:'Virar à esquerda',icon:'left',code:'ESQUERDA',key:'←'},right:{label:'Virar à direita',icon:'right',code:'DIREITA',key:'→'},if:{label:'Se livre, avançar',icon:'condition',code:'SE LIVRE → AVANCE',key:'C'}};
@@ -87,23 +88,26 @@ export function PlayerEntry({onEnter,hasLegacy=false}){
   </form><p className="entry-note"><Icon name="trophy" size={15}/>Use o mesmo nome e sobrenome para retomar sua partida. Ranking e progresso ficam salvos neste navegador.</p>
  </Modal></div>;
 }
-export function Ranking({rows,playerId,onClose}){
+export function Ranking({rows,playerId,onClose,online=false,status=''}){
  return <Modal title="Ranking de detetives" eyebrow="CADA PONTO CONTA" onClose={onClose} wide>
-  <p className="muted">Melhor saldo de cada jogador neste navegador, já com o desconto de 1 ponto por comando executado. Apenas partidas com o mesmo banco de desafios entram nesta classificação.</p>
+  <p className="muted">{online?'Melhor saldo dos jogadores online, já com o desconto de 1 ponto por comando executado.':'Melhor saldo de cada jogador neste navegador, já com o desconto de 1 ponto por comando executado.'} Apenas partidas com o mesmo banco de desafios entram nesta classificação.</p>
+  {online&&<p role="status" aria-live="polite">{status}</p>}
+  {!rows.length&&<p className="muted">Nenhum resultado disponível nesta classificação.</p>}
   <div className="ranking-scroll"><table className="ranking-table"><thead><tr><th scope="col">Posição</th><th scope="col">Jogador</th><th scope="col">Pontos</th><th scope="col">Comandos</th></tr></thead><tbody>{rows.map(p=><tr key={p.id} className={p.id===playerId?'current-player':''}><td><span className={`ranking-place place-${p.rank}`}>{p.rank<=3&&<Icon name="trophy" size={14}/>}<span>{p.rank}º</span></span></td><th scope="row"><span>{p.name}</span>{p.id===playerId&&<small>VOCÊ</small>}</th><td className="ranking-score">{p.score.toLocaleString('pt-BR')}</td><td className="ranking-sectors">{p.commands}</td></tr>)}</tbody></table></div>
   <div className="ranking-footnote"><Icon name="bulb" size={17}/><p>O ranking guarda o melhor resultado e os comandos usados para obtê-lo. Reiniciar mantém essa marca. Em empate de pontos, vence quem usou menos comandos; se ambos forem iguais, a posição é compartilhada.</p></div>
  </Modal>;
 }
 export default function App({initialState,account,onLogout}){
  const accountStorage=typeof window==='undefined'?null:{getItem:()=>window.localStorage.getItem(`codigo-perdido-conta-${account?.id}`),setItem:(_key,value)=>window.localStorage.setItem(`codigo-perdido-conta-${account?.id}`,value)};
- const [store,setStore]=useState(()=>{if(account){let existing;try{existing=readPlayers(accountStorage);}catch{existing=emptyPlayers();}if(existing.players.some(p=>p.id===account.id))return existing;const state=freshGame();return {...emptyPlayers(),players:[{id:account.id,givenName:'Conta',familyName:'Online',campaign:campaignData(state),best:{scoringVersion:2,score:0,commands:0,clues:0,completed:0}}]};}if(initialState)return {...emptyPlayers(initialState.questions),pendingLegacy:campaignData(initialState)};if(typeof window==='undefined')return emptyPlayers();try{return readPlayers(window.localStorage);}catch{return emptyPlayers();}});
+ const [store,setStore]=useState(()=>{if(account){let existing;try{existing=readPlayers(accountStorage);}catch{existing=emptyPlayers();}if(existing.players.some(p=>p.id===account.id))return existing;const state=freshGame();return {...emptyPlayers(),players:[{id:account.id,givenName:'Conta',familyName:'Online',campaign:campaignData(state),best:{scoringVersion:SCORING_VERSION,score:0,commands:0,clues:0,completed:0}}]};}if(initialState)return {...emptyPlayers(initialState.questions),pendingLegacy:campaignData(initialState)};if(typeof window==='undefined')return emptyPlayers();try{return readPlayers(window.localStorage);}catch{return emptyPlayers();}});
  const [playerId,setPlayerId]=useState(account?.id??null),[saveError,setSaveError]=useState(false);
  const player=store.players.find(p=>p.id===playerId);
+ const liveRanking=useLiveLeaderboard(account,player);
  const progress=useCallback(state=>setStore(old=>recordProgress(old,playerId,state)),[playerId]);
  useEffect(()=>{if(!store.players.length)return;try{setSaveError(!savePlayers(account?accountStorage:window.localStorage,store));}catch{setSaveError(true);}},[store]);
  const enter=(given,family)=>{const result=joinPlayer(store,given,family);setStore(result.store);setPlayerId(result.playerId);};
  if(!player)return <PlayerEntry onEnter={enter} hasLegacy={!!store.pendingLegacy}/>;
- return <GameClient key={player.id} initialState={restoreCampaign(player.campaign)} player={account?{...player,givenName:account.name,familyName:''}:player} canManageQuestions={!account||account.role==='teacher'} ranking={rankingRows(store,player.campaign.questions).map(row=>account&&row.id===account.id?{...row,name:account.name}:row)} onProgress={progress} onSwitchPlayer={account?onLogout:()=>setPlayerId(null)} saveError={saveError}/>;
+ return <GameClient key={player.id} initialState={restoreCampaign(player.campaign)} player={account?{...player,givenName:account.name,familyName:''}:player} canManageQuestions={!account||account.role==='teacher'} ranking={account?liveRanking.rows:rankingRows(store,player.campaign.questions)} rankingOnline={!!account} rankingStatus={liveRanking.status} onProgress={progress} onSwitchPlayer={account?onLogout:()=>setPlayerId(null)} saveError={saveError}/>;
 }
 export function PlayControls({state,dispatch,repeat,setRepeat}){
  const run=state.runs[state.level],blocked=state.running||!!state.active||run.completed||!!run.impact,listRef=useRef(null),count=state.queue.reduce((n,c)=>n+c.repeat,0);
@@ -116,7 +120,7 @@ export function PlayControls({state,dispatch,repeat,setRepeat}){
   <div className="play-execution"><div className="play-loop"><select aria-label="Quantidade de avanços na repetição" value={repeat} onChange={e=>setRepeat(Number(e.target.value))} disabled={blocked}>{[2,3,4,5,6,7,8].map(n=><option key={n} value={n}>{n}×</option>)}</select><button disabled={blocked||state.queue.length>=30} onClick={()=>dispatch({type:'ADD',command:'forward',repeat})} aria-label={`Adicionar repetição de ${repeat} avanços`}><Icon name="loop" size={19}/><span>Repetir</span></button></div><button className="primary play-run" disabled={!state.queue.length||!!state.active||run.completed} onClick={()=>dispatch({type:state.running?'STOP':'START'})}><Icon name={state.running?'pause':'play'} size={19}/>{state.running?'Pausar':'Executar'}</button><button className="secondary play-step" disabled={state.running||!state.queue.length||!!state.active||run.completed} onClick={()=>dispatch({type:'STEP'})}><Icon name="step" size={18}/><span>Passo</span></button></div>
  </section>;
 }
-export function GameClient({initialState,player,ranking=[],onProgress=()=>{},onSwitchPlayer=()=>{},saveError=false,initialFocusMode,canManageQuestions=true}){
+export function GameClient({initialState,player,ranking=[],rankingOnline=false,rankingStatus='',onProgress=()=>{},onSwitchPlayer=()=>{},saveError=false,initialFocusMode,canManageQuestions=true}){
  const [state,dispatch]=useReducer(gameReducer,initialState,seed=>seed||freshGame());
  useGameSounds(state);
  useAudioScene(LEVEL_INFO[state.level].theme);
@@ -154,8 +158,8 @@ export function GameClient({initialState,player,ranking=[],onProgress=()=>{},onS
  return <div ref={appRef} className={`app-shell${focusMode?' focus-mode':''}`}>
   <AudioControls/>
   {focusMode&&<header className="focus-toolbar" aria-label={`Modo jogo, setor ${state.level+1}: ${info.place}`}><button className="focus-back" onClick={leaveFocus} aria-label="Voltar ao painel completo" title="Voltar ao painel"><Icon name="shrink" size={19}/><span>Painel</span></button><div className="focus-stats"><strong><Icon name="trophy" size={15}/>{total.toLocaleString('pt-BR')}<small>pts</small></strong><span><Icon name="file" size={14}/>{run.solved.length}/{state.questions[state.level].length}</span><span className="focus-command-count">{run.commands} cmd</span></div><div className="focus-options">{canFullscreen&&<button onClick={toggleFullscreen} aria-label={nativeFullscreen?'Sair da tela cheia do navegador':'Usar tela cheia do navegador'} title="Tela cheia"><Icon name={nativeFullscreen?'shrink':'expand'} size={19}/></button>}<button onClick={()=>openModal('play-menu')} aria-label="Abrir menu de pausa"><Icon name="menu" size={22}/></button></div></header>}
-  <header className="topbar"><a className="brand" href="#main" aria-label="Operação Código Perdido, ir ao jogo"><span className="brand-icon"><Icon name="search" size={23}/></span><span><span className="brand-overline">OPERAÇÃO</span><strong>Código Perdido<span className="brand-dot">.</span></strong></span></a><div className="header-center"><span className="live-dot"/>CENTRAL DE INVESTIGAÇÃO<span className="header-divider"/>ENSINO MÉDIO</div><div className="header-actions"><button className="header-focus" aria-label="Ampliar jogo" title="Ampliar jogo" onClick={()=>setFocusMode(true)}><Icon name="expand" size={18}/><span>Ampliar jogo</span></button><button className="header-ranking" onClick={()=>openModal('ranking')} aria-label="Abrir ranking de pontos"><Icon name="trophy" size={18}/><span>Ranking</span></button><button className="header-help" onClick={()=>openModal('help')}><Icon name="help" size={18}/><span>Como jogar</span></button><button className="player-switch" onClick={switchPlayer} title="Trocar jogador" aria-label={`Jogador ${player.givenName} ${player.familyName}. Trocar jogador.`}><span className="avatar">{(player.givenName[0]+player.familyName[0]).toLocaleUpperCase('pt-BR')}</span><span className="player-switch-label"><strong>{player.givenName}</strong><small>Trocar jogador</small></span></button></div></header>
-  {saveError&&<div className="storage-warning" role="alert">O navegador não permitiu salvar. O ranking e o progresso serão mantidos apenas enquanto esta aba estiver aberta.</div>}
+  <header className="topbar"><a className="brand" href="#main" aria-label="Operação Código Perdido, ir ao jogo"><span className="brand-icon"><Icon name="search" size={23}/></span><span><span className="brand-overline">OPERAÇÃO</span><strong>Código Perdido<span className="brand-dot">.</span></strong></span></a><div className="header-center"><span className="live-dot"/>CENTRAL DE INVESTIGAÇÃO<span className="header-divider"/>ENSINO MÉDIO</div><div className="header-actions"><button className="header-focus" aria-label="Ampliar jogo" title="Ampliar jogo" onClick={()=>setFocusMode(true)}><Icon name="expand" size={18}/><span>Ampliar jogo</span></button><button className="header-ranking" onClick={()=>openModal('ranking')} aria-label="Abrir ranking de pontos"><Icon name="trophy" size={18}/><span>Ranking</span></button><button className="header-help" onClick={()=>openModal('help')}><Icon name="help" size={18}/><span>Como jogar</span></button><button className="player-switch" onClick={switchPlayer} title="Trocar jogador" aria-label={`Jogador ${player.givenName} ${player.familyName}. Trocar jogador.`}><span className="avatar">{((player.givenName[0]||'')+(player.familyName[0]||'')).toLocaleUpperCase('pt-BR')}</span><span className="player-switch-label"><strong>{player.givenName}</strong><small>Trocar jogador</small></span></button></div></header>
+  {saveError&&<div className="storage-warning" role="alert">{rankingOnline?'O navegador não permitiu salvar o progresso local. Confira no ranking se seu recorde foi sincronizado antes de fechar esta aba.':'O navegador não permitiu salvar. O ranking e o progresso serão mantidos apenas enquanto esta aba estiver aberta.'}</div>}
   <div className="workspace">
    <aside className="sidebar" aria-label="Navegação da investigação"><div className="sidebar-group-label">SUA INVESTIGAÇÃO</div><button className={`sidebar-link ${modal!=='notebook'?'active':''}`} onClick={()=>setModal(null)}><Icon name="map"/><span>Mapa da missão</span><span className="nav-square"/></button><button className="sidebar-link" onClick={()=>openModal('notebook')}><Icon name="book"/><span>Caderno de pistas</span><span className="count-badge">{found}</span></button>
     <div className="campaign-heading"><span className="sidebar-group-label">OS SEIS SETORES</span><span className="mono small">{state.runs.filter(r=>r.completed).length}/{LEVEL_INFO.length}</span></div>
@@ -189,7 +193,7 @@ export function GameClient({initialState,player,ranking=[],onProgress=()=>{},onS
   </Modal>}
   {modal==='help'&&<Help onClose={()=>setModal(null)}/>}
   {modal==='notebook'&&<Notebook state={state} onClose={()=>setModal(null)}/>}
-  {modal==='ranking'&&<Ranking rows={ranking} playerId={player.id} onClose={()=>setModal(null)}/>}
+  {modal==='ranking'&&<Ranking rows={ranking} online={rankingOnline} status={rankingStatus} playerId={player.id} onClose={()=>setModal(null)}/>}
   {canManageQuestions&&modal==='questions'&&<QuestionBank state={state} dispatch={dispatch} onClose={()=>setModal(null)} confirm={confirm}/>}
   {confirmation&&<Modal title={confirmation.title} eyebrow="CONFIRMAR ALTERAÇÃO" onClose={()=>setConfirmation(null)}><p className="confirm-description">{confirmation.description}</p><div className="modal-footer"><button className="secondary" onClick={()=>setConfirmation(null)}>Cancelar</button><button className="primary" onClick={()=>{confirmation.action();setConfirmation(null);}}>Confirmar<Icon name="check" size={17}/></button></div></Modal>}
  </div>;
