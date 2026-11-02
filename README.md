@@ -63,6 +63,8 @@ Cada professor pode excluir ou reiniciar apenas suas salas; o administrador pode
 
 Nomes e recordes ficam no servidor. Progresso da campanha, perguntas personalizadas e evolução individual ficam no navegador, separados por rodada. Os pontos ainda são calculados pelo frontend.
 
+Professores podem recuperar o acesso em **Professor / admin → Esqueci minha senha**. Recebem um link por e-mail e definem uma nova senha, sem intervenção do administrador. Consulte a configuração de URLs em [backend/README.md](backend/README.md); essa funcionalidade não exige migração SQL.
+
 ## Jogo
 
 Monte uma sequência de avanços, giros, condições e repetições. Execute a sequência ou teste um passo por vez. Resolva as pistas e alcance o terminal para liberar o próximo setor. As seis fases têm temas e inimigos próprios.

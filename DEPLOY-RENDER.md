@@ -32,8 +32,9 @@ Em **Environment**, adicione `NODE_VERSION=24` e as duas variáveis do Supabase 
 
 1. Confira em [backend/README.md](backend/README.md) as migrações necessárias. A publicação do frontend não executa migrações no banco.
 2. No Supabase, em **Authentication > URL Configuration**, configure **Site URL** com a URL final do Render. Adicione também as URLs de retorno utilizadas pelo seu fluxo de autenticação em **Redirect URLs**.
-3. Abra o site publicado e teste cadastro e entrada de aluno, login de professor e acesso administrativo com contas de teste.
-4. Recarregue a página e confira se o site continua abrindo.
+3. Para recuperação de senha, adicione em **Redirect URLs** a URL exata `https://SEU-SITE.onrender.com/?recuperar=1` e mantenha **Site URL** apontando para o domínio publicado. Use o endereço real do seu site.
+4. Abra o site publicado e teste cadastro e entrada de aluno, login de professor e acesso administrativo com contas de teste.
+5. Recarregue a página e confira se o site continua abrindo.
 
 O progresso da campanha continua no navegador. Para ativar a lista de salas, execute `backend/supabase/migrations/202611020004_room_list_entry.sql` após as migrações anteriores, conforme [backend/README.md](backend/README.md). Essa migração preserva salas, alunos e resultados existentes. Depois do deploy, professores criam salas e alunos as escolhem na lista, sem digitar código. As variáveis do Render não mudam.
 

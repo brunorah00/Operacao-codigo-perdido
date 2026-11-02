@@ -1,7 +1,9 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {AudioControls,useAudioScene} from '../../audio/AudioProvider.jsx';
 import {enterStudent,readStudent,verifyStudent,competitionError,STUDENT_SESSION_KEY} from '../../services/students.js';
-import {supabase} from '../../services/supabase.js';
+import {supabase,passwordRecoveryEntry} from '../../services/supabase.js';
+import {clearRecoveryLocation,recoveryError} from '../../services/password-recovery.js';
+import {PasswordRecovery} from './PasswordRecovery.jsx';
 import {connectionErrorMessage} from '../../services/connection-errors.js';
 import {useCompetition} from '../competition/useCompetition.js';
 import {RoomPicker} from '../competition/RoomPicker.jsx';
@@ -11,6 +13,7 @@ function GameScenery(){return <div className="account-scenery" aria-hidden="true
 export default function AccountGate({children}){
  const [session,setSession]=useState(null),[profile,setProfile]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [student,setStudent]=useState(()=>{try{return readStudent(window.localStorage);}catch{return null;}}),[verified,setVerified]=useState(''),[retry,setRetry]=useState(0);
+ const [recovering,setRecovering]=useState(passwordRecoveryEntry.requested),[invalidRecovery,setInvalidRecovery]=useState(passwordRecoveryEntry.invalid);
  const [teacherRoom,setTeacherRoom]=useState(null),[entryRoom,setEntryRoom]=useState(''),[roomReady,setRoomReady]=useState(false);
  const selectedRoomId=session?teacherRoom?.id:student?.room_id;
  const {competition,error:competitionLoadError,missing,refresh,apply}=useCompetition(supabase,selectedRoomId);
@@ -21,17 +24,17 @@ export default function AccountGate({children}){
  useEffect(()=>{
   if(!supabase){setLoading(false);return;}
   let alive=true;
-  supabase.auth.getSession().then(({data,error})=>{if(alive){setSession(data.session);setLoading(false);if(error)setError(connectionErrorMessage(error));}}).catch(error=>{if(alive){setError(connectionErrorMessage(error));setLoading(false);}});
-  const {data}=supabase.auth.onAuthStateChange((_event,value)=>{if(alive&&!registering.current){setSession(value);setProfile(null);}});
+  supabase.auth.getSession().then(({data,error})=>{if(alive){setSession(data.session);setLoading(false);if(error)setError(passwordRecoveryEntry.requested?recoveryError(error):connectionErrorMessage(error));}}).catch(error=>{if(alive){setError(connectionErrorMessage(error));setLoading(false);}});
+  const {data}=supabase.auth.onAuthStateChange((event,value)=>{if(alive&&!registering.current){if(event==='PASSWORD_RECOVERY'){setRecovering(true);setInvalidRecovery(false);setError('');}setSession(value);setProfile(null);}});
   return()=>{alive=false;data.subscription.unsubscribe();};
  },[]);
  useEffect(()=>{
-  if(!session)return;
+  if(!session||recovering)return;
   let alive=true;
   const load=async()=>{try{const {data,error}=await supabase.from('profiles').select('*').eq('id',session.user.id).single();if(error)throw error;if(alive){setProfile(data);setError('');}}catch(error){if(alive)setError(connectionErrorMessage(error));}};
   void load();const timer=setInterval(load,15000);
   return()=>{alive=false;clearInterval(timer);};
- },[session]);
+ },[session,recovering]);
  useEffect(()=>{
   if(!student||!competition||session)return;
   if(student.competition_id!==competition.competition_id){forgetStudent();setNotice('O professor reiniciou sua sala. Entre novamente para começar do início.');return;}
@@ -49,6 +52,16 @@ export default function AccountGate({children}){
   setNotice('Esta sala foi excluída. Escolha outra sala para continuar.');
  },[missing,session]);
  const logout=async()=>{forgetStudent();setTeacherRoom(null);if(!session)return;setBusy(true);const {error}=await supabase.auth.signOut();if(error)setError(error.message);else{setProfile(null);setSession(null);}setBusy(false);};
+ const finishRecovery=()=>{
+  clearRecoveryLocation();forgetStudent();setTeacherRoom(null);setRecovering(false);setInvalidRecovery(false);setMode('login');setRole('teacher');setError('');setNotice('Senha atualizada com sucesso.');
+ };
+ const cancelRecovery=async()=>{
+  setBusy(true);setError('');
+  try{
+   if(recovering&&session){const {error}=await supabase.auth.signOut({scope:'local'});if(error)throw error;setSession(null);setProfile(null);}
+   clearRecoveryLocation();setRecovering(false);setInvalidRecovery(false);setRole('teacher');setMode('login');
+  }catch(error){setError(recoveryError(error));}finally{setBusy(false);}
+ };
  const submit=async event=>{
   event.preventDefault();setBusy(true);setError('');setNotice('');
   const form=new FormData(event.currentTarget),email=String(form.get('email')||'').trim().toLowerCase(),password=String(form.get('password')||'');
@@ -75,6 +88,7 @@ export default function AccountGate({children}){
  const panel=content=><main className="account-screen"><GameScenery/><section className="account-card"><AudioControls/><span className="eyebrow">OPERAÇÃO: CÓDIGO PERDIDO</span>{content}{error&&<p role="alert" className="feedback wrong">{error}</p>}</section></main>;
  if(!supabase)return panel(<><h1>Configurar conexão online</h1><p>Configure as variáveis do Supabase conforme backend/README.md.</p></>);
  if(loading)return panel(<p role="status">Carregando…</p>);
+ if(recovering||mode==='forgot')return panel(<PasswordRecovery client={supabase} session={session} initialEmail={loginEmail} updating={recovering} invalid={invalidRecovery} onComplete={finishRecovery} onCancel={cancelRecovery} cancelling={busy}/>);
  if(selectedRoomId&&(!competition||missing))return panel(<><p role="status">{competitionLoadError||(missing?'Esta sala foi excluída.':'Conectando à sala…')}</p><button className="secondary" onClick={refresh}>Tentar novamente</button><button className="secondary" onClick={()=>session?setTeacherRoom(null):forgetStudent()}>Voltar à entrada</button></>);
  if(!session&&student){
   if(student.competition_id!==competition.competition_id||verified!==`${student.id}:${competition.competition_id}`)return panel(<><p role="status">Verificando sua entrada…</p><button onClick={()=>setRetry(value=>value+1)}>Tentar novamente</button><button onClick={logout}>Voltar à entrada</button></>);
@@ -92,11 +106,12 @@ export default function AccountGate({children}){
     <RoomPicker value={entryRoom} onChange={setEntryRoom} onReadyChange={setRoomReady} disabled={busy}/>
     <label>Nome ou apelido<input name="nickname" autoComplete="nickname" placeholder="Como você quer aparecer no ranking?" required minLength={2} maxLength={120}/></label></>:<>
     {mode==='signup'&&<label>Seu nome<input name="name" autoComplete="name" required minLength={2} maxLength={120}/></label>}
-    <label>E-mail<input defaultValue={loginEmail} name="email" type="email" autoComplete="email" required/></label>
+    <label>E-mail<input value={loginEmail} onChange={e=>setLoginEmail(e.target.value)} name="email" type="email" autoComplete="email" required/></label>
     <label>Senha<input name="password" type="password" minLength={mode==='signup'?8:undefined} autoComplete={mode==='signup'?'new-password':'current-password'} required/></label>
    </>}
    <button className="primary account-submit" disabled={busy||(role==='student'&&!roomReady)}>{busy?'Aguarde…':role==='student'?'Entrar na sala':mode==='signup'?'Cadastrar professor':'Entrar'}<span aria-hidden="true">→</span></button>
   </form>
+  {role==='teacher'&&mode==='login'&&<button type="button" className="password-link" disabled={busy} onClick={()=>{setMode('forgot');setError('');setNotice('');}}>Esqueci minha senha</button>}
   {notice&&<p className="account-notice" role="status">{notice}</p>}
   {role==='teacher'&&<div className="account-mode-switch"><span>{mode==='signup'?'Já tem cadastro?':'Primeiro acesso como professor?'}</span><button type="button" disabled={busy} onClick={()=>{setMode(mode==='signup'?'login':'signup');setError('');setNotice('');}}>{mode==='signup'?'Voltar para entrar':'Cadastrar professor'}</button></div>}
  </>);

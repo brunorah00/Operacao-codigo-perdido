@@ -35,6 +35,10 @@ Alunos escolhem uma sala na lista e informam seu nome ou apelido. A lista mostra
 
 O painel de ranking permite alternar entre **Ranking da sala** e **Ranking geral**. O geral mostra alunos de todas as salas e seus nomes de sala, comparando apenas desafios e versões de pontuação iguais.
 
+## Esqueci a senha de professor
+
+Na entrada, selecione Professor / admin e toque em Esqueci minha senha. Informe o e-mail cadastrado, abra o link recebido e defina a nova senha. A aprovação do professor é mantida. Se o link expirou, solicite outro pela mesma tela.
+
 ## Controles
 
 Monte a sequência de comandos e toque em Executar ou Passo. No celular, o jogo abre ampliado; Painel retorna à interface completa. O menu reúne pistas, ranking e configurações. A tela cheia depende do suporte do navegador.

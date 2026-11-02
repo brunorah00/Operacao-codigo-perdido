@@ -74,6 +74,22 @@ where id = 'UUID-DO-USUARIO';
 
 Não há cadastro público de administrador. Não coloque senhas nos arquivos do projeto.
 
+## Recuperação de senha dos professores
+
+Em **Professor / admin → Esqueci minha senha**, o professor informa o e-mail cadastrado. O Supabase envia um link que abre **Defina sua nova senha**. Basta informar uma senha de pelo menos 8 caracteres, usar Mostrar senha se desejar e salvar. A recuperação também atende o administrador; não altera o papel nem a aprovação da conta.
+
+Não há nova migração SQL. Em **Authentication → URL Configuration**:
+
+- Confira **Site URL** com a URL pública do Render.
+- Adicione em **Redirect URLs** a URL exata `https://SEU-SITE.onrender.com/?recuperar=1`, substituindo pelo domínio real.
+- Para testes locais, adicione `http://127.0.0.1:5173/?recuperar=1` ou a porta usada pelo Vite.
+
+O envio usa `resetPasswordForEmail`; a sessão recebida pelo link é usada para `updateUser({password})`. O formulário de nova senha tem prioridade sobre o painel e continua acessível se a página for recarregada. Links expirados ou já usados oferecem uma nova solicitação. A resposta de envio não informa se o e-mail existe.
+
+O envio real depende da configuração de e-mail do projeto Supabase. Se não chegar, confira spam, os registros de Auth, limites de envio, o provedor SMTP e o template Reset Password (o padrão com `{{ .ConfirmationURL }}` é compatível). Os testes automatizados simulam o e-mail; valide uma entrega real com uma conta de professor após o deploy.
+
+Referências: [recuperação de senha](https://supabase.com/docs/reference/javascript/auth-resetpasswordforemail), [URLs autorizadas](https://supabase.com/docs/guides/auth/redirect-urls).
+
 ## Validação
 
 Após publicar, crie duas salas, entre com alunos em dispositivos diferentes e confira os dois rankings. Exclua uma sala e confira que os seus alunos voltam à entrada e seus resultados somem do ranking geral, sem afetar a outra sala. Confira também um dispositivo que estava offline e a tentativa de um professor gerenciar a sala de outro.

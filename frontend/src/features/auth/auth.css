@@ -34,3 +34,7 @@
 .competition-confirm label{display:grid;gap:8px;font-size:13px;margin:18px 0}
 .competition-confirm input{width:100%;min-height:44px;padding:10px;font-size:16px;background:white;color:#164f80;border:2px solid #91b7d9;border-radius:6px}
 .competition-confirm p{font-size:13px;line-height:1.6}
+
+.account-card .password-link{border:0;background:transparent;color:#155fa6;text-decoration:underline;text-underline-offset:3px;padding:8px 0;min-height:40px;font-size:13px}
+.password-recovery p{font-size:13px;overflow-wrap:anywhere}
+.password-recovery form input{font-size:16px}
