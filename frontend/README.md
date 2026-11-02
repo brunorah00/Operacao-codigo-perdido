@@ -3,7 +3,7 @@
 Aplicação React e Vite executada no navegador.
 
 - `src/`: interface, motor do jogo, áudio e persistência local da campanha.
-- `src/features/competition/`: acompanhamento da rodada e confirmação de reset para professores.
+- `src/features/competition/`: painel de salas, códigos, acompanhamento da rodada, exclusão e reset por professor.
 - `src/features/program/`: editor compartilhado entre computador e celular, comandos e feedback de execução.
 - `src/features/learning/`: tutorial isolado da campanha e histórico de evolução individual.
 - `src/services/`: clientes HTTP/Realtime do Supabase; apenas URL e chave publicável são usadas aqui.

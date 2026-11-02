@@ -13,7 +13,7 @@ export function orderLeaderboard(rows){
 }
 
 export function rankingError(error){
- if(['PGRST202','PGRST205','42P01','42883'].includes(error?.code))return 'Ranking online indisponível: aplique a migração 202611020002_nickname_competitions.sql no Supabase.';
+ if(['PGRST202','PGRST205','42P01','42883'].includes(error?.code))return 'Ranking online indisponível: aplique a migração 202611020003_school_rooms.sql no Supabase.';
  if(error?.code==='42501')return 'Para sincronizar seu ranking, saia da conta e entre novamente.';
  return 'Não foi possível sincronizar o ranking. Tentaremos novamente quando a conexão voltar.';
 }
@@ -31,14 +31,14 @@ export function connectLeaderboard(client,{account,bankKey,scoringVersion,onRows
   try{
    const rows=[];
    for(let start=0;;start+=1000){
-    const {data,error}=await client.from('leaderboard').select('player_id,name,score,commands,clues,completed')
-     .eq('bank_key',bankKey).eq('scoring_version',scoringVersion).eq('competition_id',account.competition_id)
+    const {data,error}=await client.from('leaderboard').select('player_id,name,score,commands,clues,completed,room_id,room_name')
+     .eq('bank_key',bankKey).eq('scoring_version',scoringVersion)
      .order('score',{ascending:false}).order('commands').order('player_id').range(start,start+999);
     if(error)throw error;
     rows.push(...data);
     if(data.length<1000)break;
    }
-   if(!stopped){readError='';onRows(orderLeaderboard(rows));status();}
+   if(!stopped){readError='';onRows(orderLeaderboard(rows.filter(row=>row.room_id===account.room_id)),orderLeaderboard(rows));status();}
   }catch(error){readError=rankingError(error);status();}
   finally{reading=false;if(readAgain&&!stopped){readAgain=false;void refresh();}}
  };
@@ -59,7 +59,7 @@ export function connectLeaderboard(client,{account,bankKey,scoringVersion,onRows
   finally{writing=false;}
  };
  const channel=client.channel(`leaderboard:${bankKey}:${account.id}`)
-  .on('postgres_changes',{event:'*',schema:'public',table:'leaderboard',filter:`bank_key=eq.${bankKey}`},()=>void refresh())
+  .on('postgres_changes',{event:'*',schema:'public',table:'leaderboard'},()=>void refresh())
   .subscribe(value=>{
    connected=value==='SUBSCRIBED';status();
    if(connected){void refresh();void publish();}
@@ -71,7 +71,7 @@ export function connectLeaderboard(client,{account,bankKey,scoringVersion,onRows
  globalThis.addEventListener?.('online',resume);
  globalThis.addEventListener?.('focus',resume);
  return {
-  update(best){if(best.scoringVersion===scoringVersion&&JSON.stringify(best)!==lastSent)pending={...best};},
+  update(best){if(account.role!=='student')return;if(best.scoringVersion===scoringVersion&&JSON.stringify(best)!==lastSent)pending={...best};},
   stop(){stopped=true;scheduler.clearInterval(writeTimer);scheduler.clearInterval(readTimer);globalThis.removeEventListener?.('online',resume);globalThis.removeEventListener?.('focus',resume);void client.removeChannel(channel);}
  };
 }

@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {enterStudent,readStudent,verifyStudent} from '../src/services/students.js';
-const profile={id:'student-id',name:'Robo Azul',role:'student',status:'active',competition_id:'round-1',ranking_token:'private-token'};
-test('Student enters with a nickname only, without email, password or Auth',async()=>{
- const client={rpc:async(name,args)=>{assert.equal(name,'enter_competition_student');assert.deepEqual(args,{nickname:'Robo Azul'});return {data:profile};}};
- assert.deepEqual(await enterStudent(client,{nickname:'  Robo Azul  '}),profile);
+const profile={id:'student-id',name:'Robo Azul',role:'student',status:'active',room_id:'room-1',room_name:'Turma A',competition_id:'round-1',ranking_token:'private-token'};
+test('Student enters with a room code and nickname, without email, password or Auth',async()=>{
+ const client={rpc:async(name,args)=>{assert.equal(name,'enter_competition_student');assert.deepEqual(args,{nickname:'Robo Azul',room_code:'ABC123'});return {data:profile};}};
+ assert.deepEqual(await enterStudent(client,{nickname:'  Robo Azul  ',roomCode:' abc123 '}),profile);
 });
 test('Nickname access reports the current migration and rejects malformed identities',async()=>{
- await assert.rejects(()=>enterStudent({rpc:async()=>({error:{code:'PGRST202'}})},{nickname:'Ana'}),/202611020002/);
- await assert.rejects(()=>enterStudent({rpc:async()=>({data:{...profile,role:'admin'}})},{nickname:'Ana'}),/perfil do aluno/);
+ await assert.rejects(()=>enterStudent({rpc:async()=>({error:{code:'PGRST202'}})},{nickname:'Ana',roomCode:'ABC123'}),/202611020003/);
+ await assert.rejects(()=>enterStudent({rpc:async()=>({data:{...profile,role:'admin'}})},{nickname:'Ana',roomCode:'ABC123'}),/perfil do aluno/);
 });
 test('Saved student sessions require a competition and session token',()=>{
  for(const value of ['broken','null',JSON.stringify({...profile,role:'admin'}),JSON.stringify({id:'old',name:'Aluno',role:'student',status:'active'})])assert.equal(readStudent({getItem:()=>value}),null);

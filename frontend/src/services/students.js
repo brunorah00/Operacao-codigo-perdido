@@ -1,12 +1,12 @@
 export const STUDENT_SESSION_KEY='codigo-perdido-aluno-local-v1';
-export const COMPETITION_MIGRATION='202611020002_nickname_competitions.sql';
+export const COMPETITION_MIGRATION='202611020003_school_rooms.sql';
 export function competitionError(error){
  if(['PGRST202','PGRST205','42P01','42883'].includes(error?.code))return `Ative a competição no Supabase executando a migração ${COMPETITION_MIGRATION}.`;
  return error?.message||'Não foi possível conectar à competição. Verifique sua conexão.';
 }
-export function validStudent(p){return p&&typeof p.id==='string'&&typeof p.name==='string'&&p.role==='student'&&p.status==='active'&&typeof p.competition_id==='string'&&typeof p.ranking_token==='string';}
-export async function enterStudent(client,{nickname}){
- const {data,error}=await client.rpc('enter_competition_student',{nickname:nickname.trim()});
+export function validStudent(p){return p&&typeof p.id==='string'&&typeof p.name==='string'&&p.role==='student'&&p.status==='active'&&typeof p.room_id==='string'&&typeof p.room_name==='string'&&typeof p.competition_id==='string'&&typeof p.ranking_token==='string';}
+export async function enterStudent(client,{nickname,roomCode}){
+ const {data,error}=await client.rpc('enter_competition_student',{nickname:nickname.trim(),room_code:roomCode.trim().toUpperCase()});
  if(error)throw Error(competitionError(error));
  if(!validStudent(data))throw Error('Não foi possível abrir o perfil do aluno.');
  return data;

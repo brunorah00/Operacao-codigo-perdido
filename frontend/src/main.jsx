@@ -8,4 +8,4 @@ import './styles.css';
 import './arcade.css';
 import './play.css';
 
-createRoot(document.getElementById('root')).render(<AudioProvider><AccountGate>{({profile,logout,onCompetitionReset})=><App key={`${profile.id}:${profile.competition_id}`} account={profile} onLogout={logout} onCompetitionReset={onCompetitionReset}/>}</AccountGate></AudioProvider>);
+createRoot(document.getElementById('root')).render(<AudioProvider><AccountGate>{({profile,logout,onCompetitionReset,onLeaveRoom})=><App key={`${profile.id}:${profile.competition_id}`} account={profile} onLogout={logout} onCompetitionReset={onCompetitionReset} onLeaveRoom={onLeaveRoom}/>}</AccountGate></AudioProvider>);

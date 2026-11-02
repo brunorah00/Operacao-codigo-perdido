@@ -29,9 +29,11 @@ O build gera `dist/` na raiz. O preview serve esse diretório. A configuração 
 
 ## Dados e acesso
 
-Alunos entram apenas com um apelido, sem cadastro, e-mail ou senha. Professores usam senha e precisam de aprovação. O ranking é compartilhado pelo Supabase Realtime quando a migração correspondente já foi aplicada. Perguntas personalizadas e progresso da campanha continuam no navegador atual, separados por rodada.
+Professores entram com senha e aprovação administrativa. Em **Minhas salas**, criam salas e compartilham os códigos de seis caracteres. Cada professor pode abrir, excluir ou reiniciar suas salas. A exclusão exige digitar EXCLUIR; o reset da sala exige REINICIAR. As ações afetam somente a sala escolhida.
 
-Professores aprovados encontram Reiniciar competição na barra lateral ou no menu do modo ampliado. A confirmação exige digitar REINICIAR. O reset apaga o ranking e os participantes de todas as salas deste projeto, exigindo uma nova entrada e uma campanha do início. As contas dos professores são mantidas.
+Alunos precisam informar o código de uma sala existente e seu nome ou apelido. Não há cadastro, e-mail ou senha. O mesmo apelido em salas diferentes identifica alunos distintos. Progresso e evolução pessoal continuam no navegador atual, separados por rodada.
+
+O painel de ranking permite alternar entre **Ranking da sala** e **Ranking geral**. O geral mostra alunos de todas as salas e seus nomes de sala, comparando apenas desafios e versões de pontuação iguais.
 
 ## Controles
 

@@ -4,13 +4,15 @@ import {enterStudent,readStudent,verifyStudent,competitionError,STUDENT_SESSION_
 import {supabase} from '../../services/supabase.js';
 import {connectionErrorMessage} from '../../services/connection-errors.js';
 import {useCompetition} from '../competition/useCompetition.js';
-import {CompetitionReset} from '../competition/CompetitionReset.jsx';
+import {RoomDashboard} from '../competition/RoomDashboard.jsx';
 function GameScenery(){return <div className="account-scenery" aria-hidden="true"><div className="account-scenery-shade"/></div>;}
 
 export default function AccountGate({children}){
  const [session,setSession]=useState(null),[profile,setProfile]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [student,setStudent]=useState(()=>{try{return readStudent(window.localStorage);}catch{return null;}}),[verified,setVerified]=useState(''),[retry,setRetry]=useState(0);
- const {competition,error:competitionLoadError,refresh,apply}=useCompetition(supabase);
+ const [teacherRoom,setTeacherRoom]=useState(null);
+ const selectedRoomId=session?teacherRoom?.id:student?.room_id;
+ const {competition,error:competitionLoadError,missing,refresh,apply}=useCompetition(supabase,selectedRoomId);
  const registering=useRef(false);
  const [loginEmail,setLoginEmail]=useState(''),[mode,setMode]=useState('login'),[role,setRole]=useState('student'),[busy,setBusy]=useState(false);
  useAudioScene(!session&&!student?'login':null);
@@ -31,16 +33,21 @@ export default function AccountGate({children}){
  },[session]);
  useEffect(()=>{
   if(!student||!competition||session)return;
-  if(student.competition_id!==competition.competition_id){forgetStudent();setNotice('O professor reiniciou a competição. Escolha seu apelido para começar do início.');return;}
+  if(student.competition_id!==competition.competition_id){forgetStudent();setNotice('O professor reiniciou sua sala. Entre novamente para começar do início.');return;}
   let alive=true;
   verifyStudent(supabase,student).then(data=>{if(alive){setStudent(data);setVerified(`${data.id}:${data.competition_id}`);setError('');}}).catch(error=>{
    if(!alive)return;
-   if(error.code==='42501'){forgetStudent();setNotice('A competição ou sua sessão foi reiniciada. Entre com seu apelido novamente.');}
+   if(error.code==='42501'){forgetStudent();setNotice('Sua sala foi excluída ou reiniciada, ou a sessão expirou. Confira o código com seu professor.');}
    else setError(competitionError(error));
   });
   return()=>{alive=false;};
  },[student?.id,student?.ranking_token,student?.competition_id,competition?.competition_id,session,retry]);
- const logout=async()=>{forgetStudent();if(!session)return;setBusy(true);const {error}=await supabase.auth.signOut();if(error)setError(error.message);else{setProfile(null);setSession(null);}setBusy(false);};
+ useEffect(()=>{
+  if(!missing)return;
+  if(session)setTeacherRoom(null);else forgetStudent();
+  setNotice('Esta sala foi excluída. Escolha outra sala para continuar.');
+ },[missing,session]);
+ const logout=async()=>{forgetStudent();setTeacherRoom(null);if(!session)return;setBusy(true);const {error}=await supabase.auth.signOut();if(error)setError(error.message);else{setProfile(null);setSession(null);}setBusy(false);};
  const submit=async event=>{
   event.preventDefault();setBusy(true);setError('');setNotice('');
   const form=new FormData(event.currentTarget),email=String(form.get('email')||'').trim().toLowerCase(),password=String(form.get('password')||'');
@@ -48,10 +55,7 @@ export default function AccountGate({children}){
   if(isSignup)registering.current=true;
   try{
    if(role==='student'){
-    const result=await enterStudent(supabase,{nickname:String(form.get('nickname')||'')});
-    const current=await refresh();
-    if(!current)throw Error('Não foi possível confirmar a rodada. Tente entrar novamente.');
-    if(current.competition_id!==result.competition_id)throw Error('A competição foi reiniciada durante a entrada. Tente novamente.');
+    const result=await enterStudent(supabase,{nickname:String(form.get('nickname')||''),roomCode:String(form.get('roomCode')||'')});
     try{localStorage.setItem(STUDENT_SESSION_KEY,JSON.stringify(result));}catch{}
     setStudent(result);setVerified(`${result.id}:${result.competition_id}`);return;
    }
@@ -70,34 +74,36 @@ export default function AccountGate({children}){
  const panel=content=><main className="account-screen"><GameScenery/><section className="account-card"><AudioControls/><span className="eyebrow">OPERAÇÃO: CÓDIGO PERDIDO</span>{content}{error&&<p role="alert" className="feedback wrong">{error}</p>}</section></main>;
  if(!supabase)return panel(<><h1>Configurar conexão online</h1><p>Configure as variáveis do Supabase conforme backend/README.md.</p></>);
  if(loading)return panel(<p role="status">Carregando…</p>);
- if(!competition)return panel(<><p role="status">{competitionLoadError||'Conectando à competição…'}</p><button className="secondary" onClick={refresh}>Tentar novamente</button></>);
+ if(selectedRoomId&&(!competition||missing))return panel(<><p role="status">{competitionLoadError||(missing?'Esta sala foi excluída.':'Conectando à sala…')}</p><button className="secondary" onClick={refresh}>Tentar novamente</button><button className="secondary" onClick={()=>session?setTeacherRoom(null):forgetStudent()}>Voltar à entrada</button></>);
  if(!session&&student){
   if(student.competition_id!==competition.competition_id||verified!==`${student.id}:${competition.competition_id}`)return panel(<><p role="status">Verificando sua entrada…</p><button onClick={()=>setRetry(value=>value+1)}>Tentar novamente</button><button onClick={logout}>Voltar à entrada</button></>);
   return children({profile:student,logout,onCompetitionReset:apply});
  }
  if(!session)return panel(<>
   <h1>{role==='teacher'&&mode==='signup'?'Cadastro de professor':'Bem-vindo, detetive.'}</h1>
-  <p className="account-intro">{role==='student'?'Escolha seu apelido e entre na competição.':'Acesso de professores e administração.'}</p>
+  <p className="account-intro">{role==='student'?'Informe o código da sala e seu nome ou apelido para jogar.':'Acesso de professores e administração.'}</p>
   <div className="account-role-switch" role="group" aria-label="Tipo de acesso">
    {[['student','Aluno'],['teacher','Professor / admin']].map(([value,label])=><button key={value} type="button" aria-pressed={role===value} disabled={busy} onClick={()=>{setRole(value);setMode('login');setError('');setNotice('');}}>{label}</button>)}
   </div>
-  <p className="account-access-note">{role==='student'?'Sem cadastro, e-mail ou senha. Use um apelido exclusivo; o mesmo apelido retoma sua identificação nesta competição.':mode==='signup'?'Professores precisam da aprovação do administrador.':'Entre com seu e-mail e sua senha.'}</p>
+  <p className="account-access-note">{role==='student'?'Peça o código ao professor. Use um nome ou apelido exclusivo na sala, sem cadastro, e-mail ou senha.':mode==='signup'?'Professores precisam da aprovação do administrador.':'Entre com seu e-mail e sua senha.'}</p>
   <form key={`${mode}-${role}`} onSubmit={submit}>
-   {role==='student'?<label>Apelido<input name="nickname" autoComplete="nickname" placeholder="Seu apelido na competição" required minLength={2} maxLength={30}/></label>:<>
+   {role==='student'?<>
+    <label>Código da sala<input name="roomCode" placeholder="Código fornecido pelo professor" autoCapitalize="characters" autoComplete="off" required minLength={6} maxLength={6}/></label>
+    <label>Nome ou apelido<input name="nickname" autoComplete="nickname" placeholder="Como você quer aparecer no ranking?" required minLength={2} maxLength={120}/></label></>:<>
     {mode==='signup'&&<label>Seu nome<input name="name" autoComplete="name" required minLength={2} maxLength={120}/></label>}
     <label>E-mail<input defaultValue={loginEmail} name="email" type="email" autoComplete="email" required/></label>
     <label>Senha<input name="password" type="password" minLength={mode==='signup'?8:undefined} autoComplete={mode==='signup'?'new-password':'current-password'} required/></label>
    </>}
-   <button className="primary account-submit" disabled={busy}>{busy?'Aguarde…':role==='student'?'Entrar na competição':mode==='signup'?'Cadastrar professor':'Entrar'}<span aria-hidden="true">→</span></button>
+   <button className="primary account-submit" disabled={busy}>{busy?'Aguarde…':role==='student'?'Entrar na sala':mode==='signup'?'Cadastrar professor':'Entrar'}<span aria-hidden="true">→</span></button>
   </form>
   {notice&&<p className="account-notice" role="status">{notice}</p>}
   {role==='teacher'&&<div className="account-mode-switch"><span>{mode==='signup'?'Já tem cadastro?':'Primeiro acesso como professor?'}</span><button type="button" disabled={busy} onClick={()=>{setMode(mode==='signup'?'login':'signup');setError('');setNotice('');}}>{mode==='signup'?'Voltar para entrar':'Cadastrar professor'}</button></div>}
  </>);
  if(!profile)return panel(<><p role="status">Carregando perfil…</p><button disabled={busy} onClick={logout}>Sair</button></>);
- if(profile.role==='admin')return panel(<><h1>Administração</h1><CompetitionReset competitionId={competition.competition_id} onReset={apply}/><TeacherRequests/><button disabled={busy} onClick={logout}>Sair</button></>);
- if(profile.role!=='teacher')return panel(<><p>Para jogar como aluno, saia e entre com um apelido.</p><button onClick={logout}>Sair</button></>);
+ if(!['teacher','admin'].includes(profile.role))return panel(<><p>Para jogar como aluno, saia e entre com um apelido.</p><button onClick={logout}>Sair</button></>);
  if(profile.status!=='active')return panel(<><h1>{profile.status==='pending'?'Aguardando aprovação':profile.status==='rejected'?'Cadastro recusado':'Acesso revogado'}</h1><p>O acesso de professor depende da liberação do administrador.</p><button disabled={busy} onClick={logout}>Sair</button></>);
- return children({profile:{...profile,competition_id:competition.competition_id},logout,onCompetitionReset:apply});
+ if(!teacherRoom)return panel(<>{notice&&<p role="status">{notice}</p>}<RoomDashboard profile={profile} onEnter={setTeacherRoom} onLogout={logout}>{profile.role==='admin'&&<TeacherRequests/>}</RoomDashboard></>);
+ return children({profile:{...profile,room_id:competition.id,room_name:competition.name,room_code:teacherRoom.join_code,competition_id:competition.competition_id},logout,onCompetitionReset:apply,onLeaveRoom:()=>setTeacherRoom(null)});
 }
 function TeacherRequests(){
  const [rows,setRows]=useState([]),[error,setError]=useState(''),[busy,setBusy]=useState(false);

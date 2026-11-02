@@ -4,26 +4,26 @@ import {supabase} from './services/supabase.js';
 import {connectLeaderboard,leaderboardBankKey,rankingError} from './services/leaderboard.js';
 
 export function useLiveLeaderboard(account,player){
- const [result,setResult]=useState({signature:null,rows:[],status:'Conectando ao ranking online…'});
+ const [result,setResult]=useState({signature:null,rows:[],generalRows:[],status:'Conectando ao ranking online…'});
  const connection=useRef(null),latest=useRef(null);
  const signature=player?JSON.stringify(player.campaign.questions):null;
  latest.current=player?.best;
  useEffect(()=>{
   if(!account||!signature||!supabase)return;
   let cancelled=false,sync;
-  setResult({signature,rows:[],status:'Conectando ao ranking online…'});
+  setResult({signature,rows:[],generalRows:[],status:'Conectando ao ranking online…'});
   leaderboardBankKey(JSON.parse(signature)).then(bankKey=>{
    if(cancelled)return;
    sync=connectLeaderboard(supabase,{
     account,bankKey,scoringVersion:SCORING_VERSION,
-    onRows:rows=>setResult(old=>({...old,rows})),
+    onRows:(rows,generalRows)=>setResult(old=>({...old,rows,generalRows})),
     onStatus:status=>setResult(old=>({...old,status}))
    });
    connection.current=sync;
    if(latest.current)sync.update(latest.current);
-  }).catch(error=>{if(!cancelled)setResult({signature,rows:[],status:rankingError(error)});});
+  }).catch(error=>{if(!cancelled)setResult({signature,rows:[],generalRows:[],status:rankingError(error)});});
   return()=>{cancelled=true;sync?.stop();connection.current=null;};
- },[account?.id,account?.ranking_token,account?.competition_id,signature]);
+ },[account?.id,account?.ranking_token,account?.competition_id,account?.room_id,signature]);
  useEffect(()=>{if(player?.best)connection.current?.update(player.best);},[player?.best]);
- return result.signature===signature?result:{rows:[],status:'Conectando ao ranking online…'};
+ return result.signature===signature?result:{rows:[],generalRows:[],status:'Conectando ao ranking online…'};
 }

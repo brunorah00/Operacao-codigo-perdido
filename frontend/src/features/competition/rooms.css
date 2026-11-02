@@ -1,0 +1,17 @@
+.room-dashboard>p{font-size:13px;line-height:1.6}
+.room-create{display:grid;gap:10px;margin:20px 0}
+.room-list{display:grid;gap:14px;margin:18px 0}
+.room-card{padding:15px;border:2px solid #93bddd;border-radius:10px;background:#f4faff;color:#205278}
+.room-card h2{margin:0 0 8px;font-size:18px;overflow-wrap:anywhere}
+.room-card p{font-size:13px}
+.room-code{font-family:monospace;font-size:22px;letter-spacing:2px;color:#075eac;white-space:nowrap}
+.room-actions{display:flex;gap:9px;flex-wrap:wrap}
+.room-actions button{min-height:44px;padding:9px 13px;font-size:12px}
+.room-banner{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 20px;background:#edf7ff;color:#23577d;border-bottom:1px solid #96bddc;font-size:12px;flex-wrap:wrap}
+.room-banner strong{overflow-wrap:anywhere}
+.room-banner button{min-height:40px;padding:8px 12px;font-size:11px}
+.focus-mode .room-banner{display:none}
+.ranking-tabs{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+.ranking-tabs button{min-height:44px;padding:10px 15px;border:1px solid #85b4da;background:#edf7ff;color:#205783}
+.ranking-tabs button[aria-pressed=true]{background:#1269bf;color:white}
+.ranking-room-name{display:block;color:#526c83;font-size:10px;margin-top:4px}

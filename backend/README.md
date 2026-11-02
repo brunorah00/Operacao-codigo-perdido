@@ -1,62 +1,67 @@
 # Backend — Supabase
 
-O backend é executado no Supabase. Esta pasta contém tabelas, funções RPC, políticas de acesso, publicação Realtime e testes SQL. Não há servidor Node adicional para iniciar. Os comandos npm são executados na raiz do repositório.
+O backend é executado no Supabase. Esta pasta contém tabelas, funções RPC, políticas de acesso, publicação Realtime e testes SQL. Não há servidor Node adicional. Execute os comandos npm na raiz do repositório.
 
-## Ativar apelidos e reset da competição
+## Ativar salas
 
-Se as três migrações anteriores já foram aplicadas, execute **somente** `backend/supabase/migrations/202611020002_nickname_competitions.sql` no SQL Editor do Supabase, inteiro e uma única vez.
+Com as migrações anteriores já aplicadas, execute **somente** `backend/supabase/migrations/202611020003_school_rooms.sql` no SQL Editor, inteiro e uma única vez.
 
-**Essa migração inicia uma competição nova e limpa o ranking e as sessões de alunos anteriores.** A entrada de alunos por e-mail é desativada. Cadastros, senhas e aprovações de professores e administradores são preservados. Após o deploy, alunos entram novamente usando apenas um apelido.
+**A migração limpa o ranking e os participantes da competição global anterior**, que não estavam associados a salas. Mantém as contas e aprovações de professores e administradores. Depois do deploy, cada professor cria suas salas e compartilha os códigos. Não há entrada de aluno sem uma sala válida.
 
-O frontend e essa migração precisam estar atualizados. Sem a migração, a tela de entrada mostra o nome do arquivo necessário. Não repita migrações antigas.
+Não repita migrações já aplicadas. Em um projeto novo, execute todas na ordem:
 
-## Instalação em projeto novo
+1. `202610140001_profiles.sql`
+2. `202610140002_students_without_password.sql`
+3. `202611020001_live_leaderboard.sql`
+4. `202611020002_nickname_competitions.sql`
+5. `202611020003_school_rooms.sql`
 
-1. Crie um projeto Supabase e execute os arquivos abaixo em ordem:
-   1. `backend/supabase/migrations/202610140001_profiles.sql`
-   2. `backend/supabase/migrations/202610140002_students_without_password.sql`
-   3. `backend/supabase/migrations/202611020001_live_leaderboard.sql`
-   4. `backend/supabase/migrations/202611020002_nickname_competitions.sql`
-2. Na raiz do repositório, copie `frontend/.env.example` para `frontend/.env` e preencha URL e chave publicável do projeto. Nunca use service_role/secret em variáveis VITE.
-3. Em Authentication, configure a URL final do site, as URLs de redirecionamento e a confirmação de e-mail para professores. Configure senha mínima de 8 caracteres no servidor.
-4. Execute `npm ci` e `npm run dev` na raiz. No Render, mantenha as duas variáveis públicas em Environment e faça um novo build após alterá-las.
+Os arquivos estão em `backend/supabase/migrations/`. Aplique a migração e publique o frontend atualizado. As variáveis do Render permanecem iguais.
 
-## Alunos: apenas apelido
+## Professores e salas
 
-A função `enter_competition_student` cria ou retoma uma identificação no servidor, sem e-mail, senha ou cadastro separado. Apelidos têm 2 a 30 caracteres. Espaços extras e diferenças de maiúsculas são normalizados; o mesmo apelido na mesma rodada identifica o mesmo jogador. Oriente a turma a usar apelidos exclusivos.
+Professores usam e-mail, senha e aprovação administrativa. Após entrar, o painel **Minhas salas** permite criar uma sala com nome e obter um código de seis caracteres. **Abrir sala** abre o jogo, os rankings e os controles daquela sala. **Minhas salas** retorna ao painel sem encerrar a sessão do professor.
 
-O apelido e os recordes ficam no servidor. A sessão é lembrada no navegador e validada no servidor antes de abrir o jogo. Por ser um acesso didático sem senha, conhecer um apelido permite retomar aquela identificação. A campanha continua salva localmente, sem sincronização de posição entre dispositivos.
+Cada professor lista e gerencia apenas suas próprias salas. O administrador pode gerenciar todas e continua aprovando professores. As funções de criação, exclusão e reset verificam o perfil ativo e a propriedade da sala no servidor. Professores pendentes ou revogados e alunos não possuem essas permissões.
 
-A identidade do aluno não concede permissões de professor. Tabelas de participantes e tokens não têm leitura ou escrita direta liberada para os clientes. As funções conferem a sessão e o identificador da competição.
+O nome e o estado das salas são públicos para acompanhamento e classificação. Os códigos de entrada ficam em uma tabela sem acesso direto de clientes; o professor recebe os seus códigos por funções autorizadas. O aluno informa um código para ingressar.
 
-## Reiniciar todos os jogadores
+## Alunos
 
-Um **professor aprovado** encontra **Reiniciar competição** na barra lateral do painel ou no menu do modo ampliado. O administrador também possui o botão em seu painel. É necessário digitar `REINICIAR` e confirmar **Apagar e reiniciar todos**.
+O aluno informa **Código da sala** e **Nome ou apelido**, sem cadastro, e-mail ou senha. O servidor cria ou retoma uma identificação naquela sala. Nomes têm 2 a 120 caracteres; espaços extras e diferenças de maiúsculas são normalizados. Oriente os alunos a usar nomes ou apelidos exclusivos dentro da sala.
 
-O reset é global para este projeto Supabase, incluindo todas as salas que o usam:
+O mesmo nome em salas diferentes identifica participantes distintos. Dentro da mesma sala e rodada, ele retoma a identificação existente. O acesso é didático: conhecer o nome e o código permite retomar essa identificação, sem comprovação de identidade.
 
-- Apaga todos os recordes, apelidos e sessões da competição atual.
-- Cria uma rodada nova e exige uma nova entrada dos alunos.
-- Faz alunos e professores começarem a campanha e a evolução individual do início, usando salvamentos separados por rodada.
-- Mantém as contas e aprovações dos professores e administradores.
+O nome e os recordes ficam no servidor. A sessão é lembrada no navegador e validada no servidor. O progresso da campanha e a evolução pessoal continuam locais, separados por rodada; não são sincronizados entre dispositivos.
 
-A ação não pode ser desfeita. Para competições simultâneas independentes por turma, seria necessário adicionar salas; o reset atual é único e global.
+## Rankings da sala e geral
 
-A função `reset_competition` verifica a autorização no servidor. Alunos, visitantes e professores pendentes ou revogados não podem executá-la. A rodada esperada evita resets duplicados. Reset, entrada de alunos e gravação de recordes usam bloqueios no mesmo registro, evitando corridas: envios de abas antigas e dispositivos offline são recusados após o reset, mesmo que ainda possuam pontuações locais.
+O painel possui duas opções:
 
-A mudança é recebida por Realtime; uma consulta a cada 5 segundos e a recuperação ao voltar à janela/rede cobrem eventos perdidos. Quando um aluno offline reconecta, precisa entrar na rodada atual. Os salvamentos locais anteriores ficam fora da rodada ativa e não são importados para o novo ranking.
+- **Ranking da sala:** apenas os alunos da sala atual.
+- **Ranking geral:** alunos de todas as salas existentes, com a sala identificada ao lado de cada nome.
 
-## Ranking ao vivo
+Ambos comparam somente partidas com banco de desafios e versão de pontuação iguais. O melhor saldo vence; em empate, menos comandos vence. Resultados idênticos compartilham posição. Professores podem testar o jogo, mas não enviam resultados para a classificação dos alunos.
 
-A tabela `leaderboard` guarda o melhor saldo por jogador, banco de desafios e versão de pontuação, apenas na rodada atual. Pontuação maior vence; em empate, menos comandos vence. Resultados idênticos compartilham posição. O upsert atômico impede que envios atrasados reduzam o recorde.
+Uma única tabela guarda os recordes e identifica a sala de cada participante. As escritas conferem sessão, sala e rodada no servidor; o cliente não escolhe a sala atribuída ao resultado. As atualizações chegam por Realtime, com consulta de recuperação a cada 10 segundos e ao voltar à janela/rede.
 
-Novos recordes são publicados em aproximadamente um segundo com conexão. Outros dispositivos recebem mudanças por Supabase Realtime; consultas a cada 10 segundos recuperam eventos perdidos. `leaderboard` e `competition_state` são incluídas na publicação `supabase_realtime` pelas migrações.
+Nomes, salas e resultados da classificação são públicos; códigos, e-mails e tokens não fazem parte dos registros públicos do ranking. Pontos ainda são calculados no frontend, sem validação antifraude das ações no servidor.
 
-Nomes e resultados do ranking são públicos para os visitantes do projeto; e-mails e tokens não fazem parte da tabela. Pontos ainda são calculados no frontend: a competição didática não possui validação antifraude das ações no servidor.
+## Excluir e reiniciar
 
-## Administrador
+**Excluir sala** fica no painel de salas. Exige digitar `EXCLUIR` e confirmar. Remove permanentemente a sala, seu código, alunos, sessões e resultados dos dois rankings. Os participantes são devolvidos à entrada; o código deixa de funcionar. Não afeta outras salas nem as contas dos professores.
 
-Crie o usuário em Authentication > Users com e-mail confirmado e metadados `{"name":"Administrador","role":"teacher"}`. Depois execute no SQL Editor, substituindo o UUID:
+**Reiniciar sala** fica dentro da sala, na barra lateral ou no menu do modo ampliado. Exige digitar `REINICIAR`. Preserva a sala e seu código, mas limpa seus participantes e resultados, inclusive no ranking geral, e cria uma rodada nova. Todos os participantes daquela sala começam do início. O antigo reset global fica desativado.
+
+As operações usam bloqueios no registro da sala. Uma gravação concorrente termina antes da exclusão/reset ou é recusada depois deles; abas antigas e dispositivos offline não conseguem repor resultados removidos. A mudança de sala é acompanhada por Realtime e consultas a cada 5 segundos. Após reconectar, o aluno precisa entrar na sala e rodada válidas.
+
+## Configuração local e administrador
+
+Na raiz, copie `frontend/.env.example` para `frontend/.env` e preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_PUBLISHABLE_KEY` do mesmo projeto ativo. Nunca use service_role/secret em variáveis VITE. Execute `npm ci` e `npm run dev`.
+
+No Supabase Authentication, configure a URL final do site, as URLs de redirecionamento e a confirmação de e-mail para professores. Configure senha mínima de 8 caracteres no servidor. No Render, mantenha as duas variáveis públicas em Environment e faça um novo build ao alterá-las.
+
+Crie o administrador em Authentication > Users com e-mail confirmado e metadados `{"name":"Administrador","role":"teacher"}`. Depois execute, substituindo o UUID:
 
 ```sql
 update public.profiles
@@ -64,27 +69,18 @@ set role = 'admin', status = 'active'
 where id = 'UUID-DO-USUARIO';
 ```
 
-Não há cadastro público de administrador. Não coloque senhas em arquivos do projeto. Professores se cadastram pela tela própria e aguardam aprovação no painel administrativo.
+Não há cadastro público de administrador. Não coloque senhas nos arquivos do projeto.
 
-## Verificação após publicar
+## Validação
 
-1. Entre com dois alunos usando apelidos distintos, em navegadores diferentes, sem informar e-mail ou senha.
-2. Resolva uma pista e confira a atualização do ranking no outro navegador.
-3. Entre com um professor aprovado e clique em Reiniciar competição. Confira a confirmação antes de executar.
-4. Verifique se os dois alunos voltam à entrada e se o mesmo apelido inicia uma campanha e um ranking zerados na nova rodada.
-5. Confira que a conta do professor permanece ativa e que abas antigas não conseguem repor recordes.
-6. Repita com um aluno offline; ao reconectar, sua rodada anterior deve ser invalidada.
+Após publicar, crie duas salas, entre com alunos em dispositivos diferentes e confira os dois rankings. Exclua uma sala e confira que os seus alunos voltam à entrada e seus resultados somem do ranking geral, sem afetar a outra sala. Confira também um dispositivo que estava offline e a tentativa de um professor gerenciar a sala de outro.
 
-## Testes locais do banco
-
-`backend/tests/competition.sql` executa todas as migrações em um PostgreSQL vazio e descartável e verifica apelidos, sessões, ranking, aprovação de professores, reset global e bloqueio de resultados da rodada anterior:
+Os testes em `backend/tests/rooms.sql` executam todas as migrações e testes anteriores em PostgreSQL vazio e descartável:
 
 ```sh
-psql -v ON_ERROR_STOP=1 -f backend/tests/competition.sql DATABASE
+psql -v ON_ERROR_STOP=1 -f backend/tests/rooms.sql DATABASE
 ```
 
-**Não execute esse arquivo de testes no Supabase de produção.** Ele inclui o bootstrap dos testes anteriores (`leaderboard.sql`). `backend/supabase/authorization-checks.sql` contém verificações da autorização de alunos Auth da etapa anterior; o acesso atual dos alunos usa sessões de apelido.
+**Não execute esse arquivo de testes no Supabase de produção.** Ele verifica entrada obrigatória por sala, códigos, identidades separadas, rankings, propriedade das salas, exclusão, reset e rejeição de sessões antigas.
 
-## Falha de conexão
-
-Se aparecer `ERR_NAME_NOT_RESOLVED`, confira se o projeto está ativo e copie sua Project URL e chave publicável para `frontend/.env`, ambas do mesmo projeto. Reinicie o Vite ou faça um novo build no Render após alterar variáveis. Verifique também o DNS e a conexão local.
+Se aparecer `ERR_NAME_NOT_RESOLVED`, confira a Project URL, a chave publicável, o projeto ativo, DNS e conexão. Reinicie o Vite ou publique um novo build após mudar variáveis.
