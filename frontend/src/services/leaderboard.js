@@ -13,7 +13,7 @@ export function orderLeaderboard(rows){
 }
 
 export function rankingError(error){
- if(['PGRST202','PGRST205','42P01','42883'].includes(error?.code))return 'Ranking online indisponível: aplique a migração 202611020003_school_rooms.sql no Supabase.';
+ if(['PGRST202','PGRST205','42P01','42883'].includes(error?.code))return 'Ranking online indisponível: aplique a migração 202611020004_room_list_entry.sql no Supabase.';
  if(error?.code==='42501')return 'Para sincronizar seu ranking, saia da conta e entre novamente.';
  return 'Não foi possível sincronizar o ranking. Tentaremos novamente quando a conexão voltar.';
 }

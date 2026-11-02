@@ -19,7 +19,7 @@ export function RoomDashboard({profile,onEnter,onLogout,children}){
   if(busy||confirmation!=='EXCLUIR')return;setBusy(true);setError('');
   try{const {error}=await supabase.rpc('delete_school_room',{p_room_id:deleting.id});if(error)throw error;setDeleting(null);await load();}catch(error){setError(competitionError(error));}finally{setBusy(false);}
  };
- return <div className="room-dashboard"><h1>{profile.role==='admin'?'Gerenciar salas':'Minhas salas'}</h1><p>Crie uma sala e compartilhe o código com seus alunos. Cada sala tem seu ranking e seus participantes também aparecem no ranking geral.</p>
+ return <div className="room-dashboard"><h1>{profile.role==='admin'?'Gerenciar salas':'Minhas salas'}</h1><p>Crie uma sala para ela aparecer na lista de entrada dos alunos. Cada sala tem seu ranking e seus participantes também aparecem no ranking geral.</p>
   <form className="room-create" onSubmit={create}><label>Nome da sala<input name="roomName" value={name} onChange={e=>setName(e.target.value)} placeholder="Ex.: 2º ano A · Matemática" minLength={2} maxLength={80} required/></label><button className="primary" disabled={busy}>Criar sala</button></form>
   {error&&<p role="alert" className="feedback wrong">{error}</p>}
   <button className="secondary" onClick={load} disabled={busy}>Atualizar salas</button>

@@ -15,3 +15,7 @@
 .ranking-tabs button{min-height:44px;padding:10px 15px;border:1px solid #85b4da;background:#edf7ff;color:#205783}
 .ranking-tabs button[aria-pressed=true]{background:#1269bf;color:white}
 .ranking-room-name{display:block;color:#526c83;font-size:10px;margin-top:4px}
+
+.room-picker select{display:block;width:100%;min-height:48px;margin-top:9px;border:2px solid #c2d4e4;border-radius:12px;padding:10px;background:#fff;color:#174f81;font-size:16px}
+.room-picker p{font-size:12px;line-height:1.5}
+.room-list-refresh{min-height:40px;padding:8px 10px;font-size:11px;margin:8px 0 14px}

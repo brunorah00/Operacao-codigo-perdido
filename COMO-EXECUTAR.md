@@ -29,9 +29,9 @@ O build gera `dist/` na raiz. O preview serve esse diretório. A configuração 
 
 ## Dados e acesso
 
-Professores entram com senha e aprovação administrativa. Em **Minhas salas**, criam salas e compartilham os códigos de seis caracteres. Cada professor pode abrir, excluir ou reiniciar suas salas. A exclusão exige digitar EXCLUIR; o reset da sala exige REINICIAR. As ações afetam somente a sala escolhida.
+Professores entram com senha e aprovação administrativa. Em **Minhas salas**, criam salas que aparecem automaticamente na lista de entrada dos alunos. Cada professor pode abrir, excluir ou reiniciar suas salas. A exclusão exige digitar EXCLUIR; o reset da sala exige REINICIAR. As ações afetam somente a sala escolhida.
 
-Alunos precisam informar o código de uma sala existente e seu nome ou apelido. Não há cadastro, e-mail ou senha. O mesmo apelido em salas diferentes identifica alunos distintos. Progresso e evolução pessoal continuam no navegador atual, separados por rodada.
+Alunos escolhem uma sala na lista e informam seu nome ou apelido. A lista mostra a sala e o professor, sem necessidade de digitar código. Se estiver vazia, aguarde o professor criar uma sala ou toque em Atualizar lista de salas. Não há cadastro, e-mail ou senha. O mesmo apelido em salas diferentes identifica alunos distintos. Progresso e evolução pessoal continuam no navegador atual, separados por rodada.
 
 O painel de ranking permite alternar entre **Ranking da sala** e **Ranking geral**. O geral mostra alunos de todas as salas e seus nomes de sala, comparando apenas desafios e versões de pontuação iguais.
 

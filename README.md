@@ -53,9 +53,9 @@ Os comandos são encaminhados ao workspace `frontend`. O build gera `dist/` na r
 
 ## Backend e dados
 
-Configure o Supabase conforme [backend/README.md](backend/README.md). A entrada em salas exige a nova migração `202611020003_school_rooms.sql`, após as anteriores. Ela limpa os participantes e o ranking da competição global anterior, preservando os professores. Não repita migrações já aplicadas. As variáveis do Render permanecem iguais.
+Configure o Supabase conforme [backend/README.md](backend/README.md). A seleção de salas pela lista exige a nova migração `202611020004_room_list_entry.sql`, após as anteriores. Ela preserva salas, alunos e resultados existentes. Não repita migrações já aplicadas. As variáveis do Render permanecem iguais.
 
-Professores aprovados criam salas no painel **Minhas salas** e compartilham o código de entrada. Alunos precisam informar esse código e seu nome ou apelido; não há cadastro de aluno nem entrada sem sala. Um mesmo apelido em salas diferentes identifica jogadores diferentes.
+Professores aprovados criam salas no painel **Minhas salas**. Elas aparecem na lista de entrada com o nome do professor. Alunos escolhem a sala e informam seu nome ou apelido, sem digitar código; não há cadastro de aluno nem entrada sem sala. Um mesmo apelido em salas diferentes identifica jogadores diferentes.
 
 O **Ranking da sala** mostra seus alunos. O **Ranking geral** reúne os alunos das salas existentes e identifica a origem de cada resultado. Ambos comparam somente bancos de desafios e versões de pontuação iguais. Pontuação maior vence; menos comandos desempata; resultados idênticos compartilham posição.
 
@@ -80,4 +80,4 @@ No celular, o mapa abre ampliado com controles de toque. O menu permite acessar 
 
 ## Validação
 
-`npm test` verifica o motor do jogo, persistência local, pontuação, inimigos, áudio, exibição e clientes de cadastro e ranking. Os testes SQL em `backend/tests/rooms.sql` verificam migrações e autorizações em PostgreSQL vazio e descartável. Não execute esse arquivo de testes no Supabase de produção.
+`npm test` verifica o motor do jogo, persistência local, pontuação, inimigos, áudio, exibição e clientes de cadastro e ranking. Os testes SQL em `backend/tests/room-list.sql` verificam migrações e autorizações em PostgreSQL vazio e descartável. Não execute esse arquivo de testes no Supabase de produção.
