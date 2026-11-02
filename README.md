@@ -42,7 +42,7 @@ npm run build
 npm test
 ```
 
-O diretório `dist` contém a versão estática. A hospedagem é privada e tem sua identidade em `.openai/hosting.json`.
+O diretório `dist` contém a versão estática. Para publicar no Render, use o `render.yaml` e siga [DEPLOY-RENDER.md](DEPLOY-RENDER.md).
 
 ## Validação
 

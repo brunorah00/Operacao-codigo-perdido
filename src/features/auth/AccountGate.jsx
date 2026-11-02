@@ -2,6 +2,7 @@ import React,{useEffect,useRef,useState} from 'react';
 import {AudioControls,useAudioScene} from '../../audio/AudioProvider.jsx';
 import {enterStudent,readStudent,STUDENT_SESSION_KEY} from '../../services/students.js';
 import {supabase} from '../../services/supabase.js';
+import {connectionErrorMessage} from '../../services/connection-errors.js';
 function GameScenery(){
  return <div className="account-scenery" aria-hidden="true"><div className="account-scenery-shade"/></div>;
 }
@@ -16,7 +17,7 @@ export default function AccountGate({children}){
  useEffect(()=>{
   if(!supabase){setLoading(false);return;}
   let alive=true;
-  supabase.auth.getSession().then(({data,error})=>{if(alive){setSession(data.session);setLoading(false);if(error)setError(error.message);}});
+  supabase.auth.getSession().then(({data,error})=>{if(alive){setSession(data.session);setLoading(false);if(error)setError(connectionErrorMessage(error));}}).catch(error=>{if(alive){setError(connectionErrorMessage(error));setLoading(false);}});
   const {data}=supabase.auth.onAuthStateChange((_event,value)=>{if(alive&&!registering.current){setSession(value);setProfile(null);}});
   return()=>{alive=false;data.subscription.unsubscribe();};
  },[]);
@@ -49,7 +50,7 @@ export default function AccountGate({children}){
    }
   }catch(err){
    const messages={invalid_credentials:'E-mail ou senha incorretos. Para administrador, selecione Professor / administrador e use a senha da conta.',email_not_confirmed:'Confirme o e-mail desta conta antes de entrar.',over_email_send_rate_limit:'O limite temporário de envio de e-mails foi atingido. Tente novamente mais tarde.'};
-   setError(messages[err.code]||err.message||'Não foi possível entrar. Verifique sua conexão.');
+   setError(messages[err.code]||connectionErrorMessage(err));
   }finally{registering.current=false;setBusy(false);}
  };
  const panel=content=><main className="account-screen"><GameScenery/><section className="account-card"><AudioControls/><span className="eyebrow">OPERAÇÃO: CÓDIGO PERDIDO</span>{content}{error&&<p role="alert" className="feedback wrong">{error}</p>}</section></main>;

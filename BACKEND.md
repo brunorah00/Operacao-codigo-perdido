@@ -10,6 +10,10 @@ Esta etapa adiciona autenticação Supabase, cadastro de aluno/professor, status
 4. Em Authentication, configure a URL do site, as URLs de redirecionamento e a política de confirmação de e-mail. Configure senha mínima de 8 caracteres também no servidor.
 5. Execute `npm install` e `npm run dev`.
 
+## Falha de conexão ao entrar
+
+Se o console mostrar `ERR_NAME_NOT_RESOLVED` na chamada ao Supabase, confira se o projeto está ativo e copie novamente sua Project URL e chave publicável para `.env`. Os dois valores precisam pertencer ao mesmo projeto. Reinicie `npm run dev` após alterar o arquivo; em uma publicação, gere e publique um novo build. Se a URL estiver correta, verifique o DNS e a conexão local. Esse erro acontece antes de o banco receber a chamada e não é corrigido alterando senhas ou executando migrações.
+
 ## Administrador previamente cadastrado
 
 Crie o usuário administrativo em Authentication > Users com e-mail confirmado e metadados `{"name":"Administrador","role":"student"}`. Depois execute no SQL Editor, substituindo o UUID pelo identificador desse usuário:
