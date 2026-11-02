@@ -1,7 +1,7 @@
 # Publicar no Render
 
 O frontend é um Static Site. O banco e a autenticação continuam no Supabase.
-O arquivo `render.yaml` configura a compilação e a hospedagem.
+O arquivo `render.yaml` configura a compilação e a hospedagem. Execute os comandos na raiz do repositório: o npm workspace compila `frontend/` e gera `dist/` na raiz, preservando a configuração existente do Render. A pasta `backend/` é executada pelo Supabase e não é publicada como conteúdo estático.
 
 ## Publicação com Blueprint
 
@@ -30,12 +30,12 @@ Em **Environment**, adicione `NODE_VERSION=24` e as duas variáveis do Supabase 
 
 ## Supabase e verificação
 
-1. Confira em [BACKEND.md](BACKEND.md) as migrações necessárias. A publicação do frontend não executa migrações no banco.
+1. Confira em [backend/README.md](backend/README.md) as migrações necessárias. A publicação do frontend não executa migrações no banco.
 2. No Supabase, em **Authentication > URL Configuration**, configure **Site URL** com a URL final do Render. Adicione também as URLs de retorno utilizadas pelo seu fluxo de autenticação em **Redirect URLs**.
 3. Abra o site publicado e teste cadastro e entrada de aluno, login de professor e acesso administrativo com contas de teste.
 4. Recarregue a página e confira se o site continua abrindo.
 
-O progresso da campanha continua no navegador. Para ativar o ranking compartilhado ao vivo, execute a migração `supabase/migrations/202611020001_live_leaderboard.sql` conforme [BACKEND.md](BACKEND.md). Alunos já conectados precisam sair e entrar novamente após essa atualização.
+O progresso da campanha continua no navegador. Para ativar o ranking compartilhado ao vivo, execute a migração `backend/supabase/migrations/202611020001_live_leaderboard.sql` conforme [backend/README.md](backend/README.md). Alunos já conectados precisam sair e entrar novamente após essa atualização.
 
 Com o deploy automático habilitado, novos pushes na branch vinculada geram novas publicações.
 

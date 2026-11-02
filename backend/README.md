@@ -1,10 +1,14 @@
-# Backend — primeira etapa
+# Backend — Supabase
+
+Esta pasta contém o código executado no Supabase: esquema do banco, funções RPC, políticas de acesso e publicação Realtime em `supabase/migrations/`. Os testes SQL ficam em `tests/`. Não há dependências Node ou um servidor HTTP para iniciar nesta pasta; o frontend consome as APIs do Supabase. Os comandos npm abaixo são executados na raiz do repositório.
+
+A reorganização apenas move os arquivos existentes. Preserve os nomes e a ordem das migrações já aplicadas; não as execute novamente por terem mudado de pasta. As credenciais públicas usadas pelo navegador ficam em `frontend/.env`; nenhuma credencial administrativa deve ser adicionada ao frontend.
 
 Esta etapa adiciona autenticação Supabase, cadastro de aluno/professor, status de aprovação e painel administrativo. O progresso da campanha continua local por conta; o ranking passa a ser compartilhado após aplicar a migração descrita abaixo. Não publicar como competição oficial: os gabaritos e as regras ainda estão no frontend.
 
 ## Ranking compartilhado ao vivo
 
-Com as duas migrações anteriores já aplicadas, execute **somente** `supabase/migrations/202611020001_live_leaderboard.sql` no SQL Editor do Supabase. Execute o arquivo inteiro uma única vez. Ele cria a tabela de recordes, as permissões, a publicação Realtime e a sessão de envio para alunos sem senha. Não execute novamente as migrações antigas.
+Com as duas migrações anteriores já aplicadas, execute **somente** `backend/supabase/migrations/202611020001_live_leaderboard.sql` no SQL Editor do Supabase. Execute o arquivo inteiro uma única vez. Ele cria a tabela de recordes, as permissões, a publicação Realtime e a sessão de envio para alunos sem senha. Não execute novamente as migrações antigas.
 
 Após o deploy do site, alunos que já estavam conectados devem **sair e entrar novamente** para receber a sessão do ranking. O acesso continua por e-mail, sem senha. A sessão permite publicar por 90 dias; depois disso, basta entrar novamente. Professores usam a sessão normal do Supabase Auth.
 
@@ -22,19 +26,19 @@ A leitura do ranking disponibiliza nomes e resultados aos visitantes do projeto,
 4. Desconecte temporariamente um dispositivo, melhore sua pontuação e reconecte. Confira o reenvio e a atualização no outro dispositivo.
 5. Confira no Supabase que `public.leaderboard` está na publicação `supabase_realtime`, configurada pela migração. Se o WebSocket não conectar, o painel indica reconexão e consulta a classificação a cada 10 segundos.
 
-Os testes de SQL em `tests/leaderboard.sql` executam as migrações e verificam recordes, desempates, isolamento por desafios, permissões e sessões em um PostgreSQL vazio e descartável. **Não execute esse arquivo no Supabase de produção.**
+Os testes de SQL em `backend/tests/leaderboard.sql` executam as migrações e verificam recordes, desempates, isolamento por desafios, permissões e sessões em um PostgreSQL vazio e descartável. **Não execute esse arquivo no Supabase de produção.**
 
 ## Configuração
 
 1. Crie um projeto Supabase.
-2. Execute `supabase/migrations/202610140001_profiles.sql` no SQL Editor do projeto.
-3. Copie `.env.example` para `.env` e preencha URL e chave **publicável** (ou anon). Nunca use service_role/secret em variáveis VITE.
+2. Execute `backend/supabase/migrations/202610140001_profiles.sql` no SQL Editor do projeto.
+3. Na raiz do repositório, copie `frontend/.env.example` para `frontend/.env` e preencha URL e chave **publicável** (ou anon). Nunca use service_role/secret em variáveis VITE.
 4. Em Authentication, configure a URL do site, as URLs de redirecionamento e a política de confirmação de e-mail. Configure senha mínima de 8 caracteres também no servidor.
 5. Execute `npm install` e `npm run dev`.
 
 ## Falha de conexão ao entrar
 
-Se o console mostrar `ERR_NAME_NOT_RESOLVED` na chamada ao Supabase, confira se o projeto está ativo e copie novamente sua Project URL e chave publicável para `.env`. Os dois valores precisam pertencer ao mesmo projeto. Reinicie `npm run dev` após alterar o arquivo; em uma publicação, gere e publique um novo build. Se a URL estiver correta, verifique o DNS e a conexão local. Esse erro acontece antes de o banco receber a chamada e não é corrigido alterando senhas ou executando migrações.
+Se o console mostrar `ERR_NAME_NOT_RESOLVED` na chamada ao Supabase, confira se o projeto está ativo e copie novamente sua Project URL e chave publicável para `frontend/.env`. Os dois valores precisam pertencer ao mesmo projeto. Reinicie `npm run dev` após alterar o arquivo; em uma publicação, gere e publique um novo build. Se a URL estiver correta, verifique o DNS e a conexão local. Esse erro acontece antes de o banco receber a chamada e não é corrigido alterando senhas ou executando migrações.
 
 ## Administrador previamente cadastrado
 
@@ -58,7 +62,7 @@ Essa operação é exclusiva da configuração confiável no servidor. Não há 
 - Alterar user_metadata para role=admin: o perfil e as permissões devem permanecer iguais.
 - Conferir que um aluno só consulta o próprio perfil e não pode ler teacher_reviews.
 
-A migração ainda precisa ser executada e validada em PostgreSQL/Supabase. Os testes locais não substituem essas verificações. O arquivo `supabase/authorization-checks.sql` automatiza as principais negativas de acesso de aluno em um projeto de teste, dentro de uma transação com rollback.
+A migração ainda precisa ser executada e validada em PostgreSQL/Supabase. Os testes locais não substituem essas verificações. O arquivo `backend/supabase/authorization-checks.sql` automatiza as principais negativas de acesso de aluno em um projeto de teste, dentro de uma transação com rollback.
 
 ## Próximas etapas
 
@@ -72,7 +76,7 @@ Não importar pontuações locais como resultados oficiais. A recuperação comp
 
 ## Acesso simplificado de alunos (atualização)
 
-Execute **somente a nova migração** `supabase/migrations/202610140002_students_without_password.sql` no SQL Editor, após a primeira migração já aplicada.
+Execute **somente a nova migração** `backend/supabase/migrations/202610140002_students_without_password.sql` no SQL Editor, após a primeira migração já aplicada.
 
 - Cadastro do aluno: nome e e-mail, sem senha ou envio de confirmação. Após cadastrar, volta ao login.
 - Login do aluno: e-mail; recupera o cadastro sem duplicar ou alterar o nome existente.

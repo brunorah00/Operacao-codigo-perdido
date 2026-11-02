@@ -1,5 +1,5 @@
 -- Execute SOMENTE em PostgreSQL vazio e descartável:
--- psql -v ON_ERROR_STOP=1 -f tests/leaderboard.sql DATABASE
+-- psql -v ON_ERROR_STOP=1 -f backend/tests/leaderboard.sql DATABASE
 -- O bootstrap falha se auth já existir, evitando uso em um Supabase real.
 create schema auth;
 create role anon;

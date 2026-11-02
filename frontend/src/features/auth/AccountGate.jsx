@@ -54,7 +54,7 @@ export default function AccountGate({children}){
   }finally{registering.current=false;setBusy(false);}
  };
  const panel=content=><main className="account-screen"><GameScenery/><section className="account-card"><AudioControls/><span className="eyebrow">OPERAÇÃO: CÓDIGO PERDIDO</span>{content}{error&&<p role="alert" className="feedback wrong">{error}</p>}</section></main>;
- if(!supabase)return panel(<><h1>Configurar conexão online</h1><p>Configure as variáveis do Supabase conforme BACKEND.md para ativar cadastros e acesso ao jogo.</p></>);
+ if(!supabase)return panel(<><h1>Configurar conexão online</h1><p>Configure as variáveis do Supabase conforme backend/README.md para ativar cadastros e acesso ao jogo.</p></>);
  if(loading)return panel(<p role="status">Carregando…</p>);
  if(!session&&student)return children({profile:student,logout});
  if(!session)return panel(<>

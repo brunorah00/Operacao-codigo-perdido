@@ -3,18 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "frontend"
+  ],
   "scripts": {
-    "build": "vite build",
-    "test": "node --test tests/*.test.mjs",
-    "dev": "vite --host 127.0.0.1",
-    "preview": "vite preview --host 127.0.0.1"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.117.3",
-    "react": "19.2.6",
-    "react-dom": "19.2.6"
-  },
-  "devDependencies": {
-    "vite": "8.3.4"
+    "dev": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace frontend",
+    "preview": "npm run preview --workspace frontend",
+    "test": "npm run test --workspace frontend"
   }
 }

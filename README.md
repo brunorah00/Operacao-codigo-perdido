@@ -1,51 +1,72 @@
 # Operação: Código Perdido
 
-**Backend:** a entrada usa cadastro e login Supabase, com aprovação administrativa de professores. O ranking é compartilhado ao vivo entre jogadores após aplicar a migração `202611020001_live_leaderboard.sql`; consulte [BACKEND.md](BACKEND.md) para ativá-lo e configurar o banco. O progresso da campanha continua local. As descrições abaixo sobre identificação por nome e ranking local referem-se à versão local anterior.
+Jogo educacional em React para explorar labirintos, programar um robô e resolver desafios de matemática. A aplicação é publicada no Render; autenticação, aprovação de professores e ranking compartilhado usam Supabase.
 
+## Organização
 
-Jogo educacional em React e Vite para ensino médio. Esta implementação independente preserva a proposta do robô detetive; o código do projeto anterior não estava disponível na sessão.
-
-## Ambientes e inimigos
-
-Cada uma das seis fases possui um único tema: floresta, lajedo, água, lava, fábrica e terror. A campanha tem 45 desafios iniciais. Os corredores foram ampliados com áreas abertas para desviar das patrulhas.
-
-Vespas, golems, medusas, criaturas de lava, drones e espectros aparecem em posições aleatórias a cada nova partida ou reinício, com animações e sons próprios. Os inimigos patrulham na vertical ou na diagonal, respeitando paredes. Cada ataque desconta 30 pontos do setor, interrompe os comandos e devolve o robô à origem sem apagar pistas resolvidas. O saldo mínimo continua sendo zero. A origem fica protegida e o robô recebe proteção temporária após o ataque. As patrulhas pausam durante desafios, painéis e quando a aba está oculta.
-
-## Jogar
-
-No celular, o jogo abre com o mapa ampliado e os comandos na parte inferior. O botão “Ampliar jogo” ativa esse modo em outras telas. O mapa acompanha o tamanho disponível na vertical e na horizontal. Os botões de avanço, giro, condição, repetição, execução e passo têm alvos maiores para toque. “Painel” volta à tela completa; o menu permite acessar os demais recursos.
-
-O botão de tela cheia do navegador aparece quando a API está disponível. Quando o navegador não oferece ou recusa a tela cheia, o modo ampliado segue funcionando na janela. Os cards e menus ficam dentro do mesmo elemento de tela cheia.
-
-
-Monte uma sequência de avanços, giros, condições e repetições. Execute a sequência ou teste um passo por vez. O robô pausa ao encontrar um card. Resolva todas as pistas e alcance o terminal para liberar o próximo setor.
-
-- Arquivo central: mapa 20 × 20, álgebra e funções.
-- Laboratório: mapa 24 × 24, geometria e medidas.
-- Observatório: mapa 28 × 28, probabilidade, estatística e crescimento exponencial.
-- 36 desafios iniciais, de 3 a 12 editáveis por setor.
-- Lanterna direcional com oclusão por paredes e memória de exploração.
-- Paleta arcade com interface clara em azul, vermelho e amarelo, robô colorido e três combinações de terreno. O tema fica em `src/arcade.css`, e as cores do mapa em `src/visuals.jsx`.
-- Cada pista vale até 100 pontos; erro reduz 15 e dica reduz 20, até o mínimo de 40. Concluir um mapa acrescenta 200 pontos. Cada comando executado desconta 1 ponto do setor; o saldo mínimo do setor é zero. Avanços, giros, condições e tentativas contra paredes contam. Uma repetição de 3 avanços custa 3 comandos; editar a fila não conta.
-
-Antes de jogar, informe nome e sobrenome. O mesmo nome e sobrenome, ignorando maiúsculas e espaços extras, retoma a partida daquele jogador. O botão “Trocar jogador” volta à identificação. Cada jogador tem progresso próprio. O ranking é atualizado com a melhor pontuação individual, sem somar tentativas repetidas; em empate de pontos, menos comandos dá vantagem; empate também em comandos compartilha a posição. A identificação é um perfil local sem senha.
-
-O banco de desafios permite criar, editar, excluir e importar/exportar JSON. A aplicação usa localStorage para jogadores, ranking, perguntas e progresso; os dados pertencem ao navegador atual e não são sincronizados entre dispositivos. Alterar o banco reinicia a campanha do jogador e uma classificação distinta: apenas bancos idênticos são comparados. Novos jogadores usam o banco selecionado mais recentemente. Não há backend nem dependência de CDN em tempo de execução.
-
-Os recordes da regra anterior são recalculados com base na partida atualmente salva, pois os recordes históricos antigos não registravam os comandos. Nomes, perguntas e progresso são preservados. O progresso da versão sem jogadores é associado ao primeiro jogador que se identificar. A tela de identificação aparece novamente a cada abertura da página.
-
-## Desenvolvimento
-
-```sh
-npm install
-npm run build
-npm test
+```text
+frontend/
+  src/                 Interface, motor do jogo e clientes do Supabase
+  public/              Imagens e favicon
+  tests/               Testes JavaScript
+  .env.example         Modelo das variáveis públicas
+  index.html           Entrada da aplicação
+  package.json         Dependências e comandos do frontend
+  vite.config.js       Compilação e preview
+backend/
+  supabase/
+    migrations/        Tabelas, funções SQL, permissões e Realtime
+    authorization-checks.sql
+  tests/               Testes SQL em banco descartável
+  README.md            Configuração e operação do Supabase
+package.json           Comandos na raiz e workspace do frontend
+package-lock.json      Lockfile único das dependências
+render.yaml            Publicação no Render
 ```
 
-O diretório `dist` contém a versão estática. Para publicar no Render, use o `render.yaml` e siga [DEPLOY-RENDER.md](DEPLOY-RENDER.md).
+O frontend chama o Supabase pelos clientes em `frontend/src/services/`. O backend é executado no Supabase: não há um servidor Node adicional. As permissões, a identidade dos jogadores e a gravação dos recordes são tratadas pelas funções e políticas SQL. As regras do jogo e os gabaritos continuam no navegador; a separação de pastas não transfere essa validação para o servidor.
+
+## Executar
+
+Use Node.js 24 e npm. Na raiz do repositório:
+
+```sh
+npm ci
+cp frontend/.env.example frontend/.env
+```
+
+Preencha `frontend/.env` com a URL e a chave publicável do projeto Supabase, depois execute:
+
+```sh
+npm run dev
+```
+
+Para testes e produção:
+
+```sh
+npm test
+npm run build
+npm run preview
+```
+
+Os comandos são encaminhados ao workspace `frontend`. O build gera `dist/` na raiz, mantendo o diretório já publicado no Render. Consulte [COMO-EXECUTAR.md](COMO-EXECUTAR.md), [frontend/README.md](frontend/README.md) e [DEPLOY-RENDER.md](DEPLOY-RENDER.md).
+
+## Backend e dados
+
+Configure o Supabase conforme [backend/README.md](backend/README.md). As migrações existentes apenas mudaram de pasta: se já foram aplicadas, não as execute novamente. Esta reorganização não exige migração de dados nem alteração das variáveis cadastradas no Render.
+
+Alunos entram por e-mail, sem senha, no fluxo didático. Professores usam senha e aprovação administrativa. O ranking compartilha o melhor resultado entre jogadores com o mesmo banco de desafios e versão de pontuação; empates são resolvidos pelo menor número de comandos. Resultados idênticos compartilham posição.
+
+O progresso da campanha e as perguntas personalizadas ficam no navegador. Publicar o site ou sincronizar o ranking não transfere a campanha entre dispositivos. Os recordes ainda são calculados pelo frontend.
+
+## Jogo
+
+Monte uma sequência de avanços, giros, condições e repetições. Execute a sequência ou teste um passo por vez. Resolva as pistas e alcance o terminal para liberar o próximo setor. As seis fases têm temas e inimigos próprios.
+
+Cada pista vale inicialmente 100 pontos. Erros descontam 15 e dicas descontam 20, até o mínimo de 40 pontos por pista. Concluir o setor acrescenta 200 pontos. Cada comando executado desconta 1 ponto e cada ataque desconta 30, com saldo mínimo de zero por setor. Reiniciar preserva o recorde.
+
+No celular, o mapa abre ampliado com controles de toque. O menu permite acessar pistas, ranking e configurações. A tela cheia é usada quando o navegador oferece suporte.
 
 ## Validação
 
-Os testes percorrem toda a campanha, resolvem os 36 cards, validam a pontuação final de 3.644 pontos (4.200 pontos conquistados menos 556 comandos) e os desbloqueios. Também verificam a conectividade e bordas dos mapas com 3–12 cards, colisões, giros, repetição, condições, bloqueio da saída, dicas, erros, persistência, edição/importação de questões e recuperação de dados inválidos.
-
-Os testes de exibição verificam proporções de mapa em celulares na vertical e na horizontal, além da entrada e saída de tela cheia com APIs simuladas, inclusive quando ausentes ou recusadas. A compilação de produção é verificada. A sessão de criação não tinha o recurso control-browser; a revisão visual e a interação no navegador não puderam ser verificadas nesse ambiente.
+`npm test` verifica o motor do jogo, persistência local, pontuação, inimigos, áudio, exibição e clientes de cadastro e ranking. Os testes SQL em `backend/tests/leaderboard.sql` verificam migrações e autorizações em PostgreSQL vazio e descartável. Não execute esse arquivo de testes no Supabase de produção.
