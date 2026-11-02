@@ -1,0 +1,1 @@
+export const COMMANDS={forward:{label:'Avançar',icon:'arrow',code:'AVANCE',key:'↑'},left:{label:'Virar à esquerda',icon:'left',code:'ESQUERDA',key:'←'},right:{label:'Virar à direita',icon:'right',code:'DIREITA',key:'→'},if:{label:'Se livre, avançar',icon:'condition',code:'SE LIVRE → AVANCE',key:'C'}};

@@ -1,5 +1,6 @@
 import {freshGame,loadGame,SCORING_VERSION,totalScore} from './engine.js';
 import {DEFAULT_QUESTIONS,validateQuestions} from './questions.js';
+import {readLearning,recordLearning} from './features/learning/progress.js';
 
 export const PLAYERS_KEY='codigo-perdido-jogadores-v1';
 export function normalizeName(value,label='Nome'){
@@ -28,7 +29,7 @@ export function readPlayers(storage){
      const state=restoreCampaign(record.campaign),current=stats(state),max=maximumScore(state.questions);
      const validBest=record.best?.scoringVersion===SCORING_VERSION&&Number.isInteger(record.best.commands)&&record.best.commands>=0&&Number.isInteger(record.best.score)&&record.best.score<=max&&record.best.score>=0&&Number.isInteger(record.best.clues)&&record.best.clues>=0&&record.best.clues<=state.questions.flat().length&&Number.isInteger(record.best.completed)&&record.best.completed>=0&&record.best.completed<=state.questions.length;
      const best=validBest&&!better(current,record.best)?record.best:current;
-     players.push({id:record.id,givenName,familyName,campaign:campaignData(state),best});ids.add(record.id);names.add(nameKey);
+     players.push({id:record.id,givenName,familyName,campaign:campaignData(state),best,learning:Array.isArray(record.learning)?readLearning(record.learning,state.questions.length):recordLearning([],[],state.runs)});ids.add(record.id);names.add(nameKey);
     }catch{/* Keep other valid players if one entry is damaged. */}
    }
    return {version:1,questions,players,pendingLegacy:!players.length&&data.pendingLegacy?campaignData(restoreCampaign(data.pendingLegacy)):null};
@@ -51,7 +52,8 @@ export function recordProgress(store,playerId,state){
  const player=store.players.find(p=>p.id===playerId);if(!player)return store;
  const current=stats(state),changedBank=bankSignature(player.campaign.questions)!==bankSignature(state.questions);
  const best=changedBank||player.best.scoringVersion!==SCORING_VERSION||better(current,player.best)?current:player.best;
- return {...store,questions:state.questions,players:store.players.map(p=>p.id===playerId?{...p,campaign:campaignData(state),best}:p)};
+ const learning=recordLearning(changedBank?[]:player.learning,changedBank?[]:player.campaign.runs,state.runs);
+ return {...store,questions:state.questions,players:store.players.map(p=>p.id===playerId?{...p,campaign:campaignData(state),best,learning}:p)};
 }
 export function rankingRows(store,questions){
  const signature=bankSignature(questions);

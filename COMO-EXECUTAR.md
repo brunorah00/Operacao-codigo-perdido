@@ -34,3 +34,9 @@ Alunos entram por e-mail. Professores usam senha e precisam de aprovação. O ra
 ## Controles
 
 Monte a sequência de comandos e toque em Executar ou Passo. No celular, o jogo abre ampliado; Painel retorna à interface completa. O menu reúne pistas, ranking e configurações. A tela cheia depende do suporte do navegador.
+
+No primeiro acesso de um jogador sem movimentos anteriores, o tutorial apresenta quatro treinos. É possível pulá-lo ou reabri-lo em Como jogar → Praticar no tutorial.
+
+No editor, escolha onde inserir um comando e use as setas da lista para reorganizar a sequência. Desfazer edição restaura a fila sem alterar a posição ou os pontos do robô. O destaque amarelo explica o comando realizado; “A seguir” indica o próximo da fila.
+
+O quadro Sua evolução compara comandos entre conclusões do mesmo setor, neste navegador. No modo ampliado, ele também está no menu e no resumo de conclusão.

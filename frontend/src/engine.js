@@ -82,11 +82,27 @@ export function gameReducer(state,action){
  if(action.type==='ENEMY_TICK'){
   if(state.active||run.completed)return state;
   const next=checkEnemyHit(map,advanceEnemies(map,run)),hit=next.hits!==run.hits;
-  return withRun(reveal(map,next),hit?{queue:[],running:false,active:null,feedback:null,message:'Inimigo atingiu o robô! −30 pontos. Retorno à origem; pistas preservadas.'}:{});
+  return withRun(reveal(map,next),hit?{queue:[],queueHistory:[],editCursor:null,lastExecution:null,running:false,active:null,feedback:null,message:'Inimigo atingiu o robô! −30 pontos. Retorno à origem; pistas preservadas.'}:{});
  }
- if(action.type==='ADD')return state.running||state.active||run.completed?state:{...state,queue:state.queue.length>=30?state.queue:[...state.queue,{type:action.command,repeat:Math.max(1,Math.min(8,Number(action.repeat)||1))}],message:'Comando adicionado. Pronto para executar.'};
- if(action.type==='REMOVE')return state.running?state:{...state,queue:state.queue.filter((_,j)=>j!==action.index)};
- if(action.type==='CLEAR')return {...state,queue:[],running:false,message:'Sequência limpa. Monte um novo caminho.'};
+ const editable=!state.running&&!state.active&&!run.completed;
+ const edit=(queue,cursor=null,message='Sequência atualizada. Nenhum movimento foi executado.')=>({...state,queue,editCursor:cursor,queueHistory:[...(state.queueHistory||[]),{queue:state.queue,editCursor:state.editCursor??null}].slice(-40),message});
+ if(action.type==='INSERT_AT')return editable&&Number.isInteger(action.index)&&action.index>=0&&action.index<=state.queue.length?{...state,editCursor:action.index}:state;
+ if(action.type==='ADD'){
+  if(!editable||state.queue.length>=30||!['forward','left','right','if'].includes(action.command))return state;
+  const index=state.editCursor??state.queue.length,queue=[...state.queue];
+  queue.splice(index,0,{type:action.command,repeat:Math.max(1,Math.min(8,Math.floor(Number(action.repeat)||1)))});
+  return edit(queue,state.editCursor==null?null:index+1,'Comando inserido. Pronto para executar.');
+ }
+ if(action.type==='REMOVE')return editable&&Number.isInteger(action.index)&&action.index>=0&&action.index<state.queue.length?edit(state.queue.filter((_,j)=>j!==action.index)):state;
+ if(action.type==='MOVE_COMMAND'){
+  if(!editable||!Number.isInteger(action.index)||!Number.isInteger(action.to)||action.index<0||action.index>=state.queue.length||action.to<0||action.to>=state.queue.length||action.index===action.to)return state;
+  const queue=[...state.queue],[command]=queue.splice(action.index,1);queue.splice(action.to,0,command);return edit(queue);
+ }
+ if(action.type==='UNDO_QUEUE'){
+  if(!editable||!state.queueHistory?.length)return state;
+  const previous=state.queueHistory.at(-1);return {...state,...previous,queueHistory:state.queueHistory.slice(0,-1),message:'Última edição desfeita. A posição e os pontos do robô foram preservados.'};
+ }
+ if(action.type==='CLEAR')return editable&&state.queue.length?edit([],null,'Sequência limpa. Você pode desfazer esta edição.'):state;
  if(action.type==='START')return state.active||run.completed?state:{...state,running:state.queue.length>0,feedback:null,message:state.queue.length?'Executando sua sequência…':'Adicione pelo menos um comando.'};
  if(action.type==='STOP')return {...state,running:false,message:'Programa pausado. Você pode ajustar os próximos comandos.'};
  if(action.type==='TICK'||action.type==='STEP'){
@@ -94,16 +110,17 @@ export function gameReducer(state,action){
   const block=state.queue[0],result=moveRobot(map,run,block.type);
   const queue=block.repeat>1?[{...block,repeat:block.repeat-1},...state.queue.slice(1)]:state.queue.slice(1);
   let next=result.run,active=null,running=action.type==='TICK'&&queue.length>0,message='Comando executado.';
+  const lastExecution={type:block.type,number:next.commands,from:{...run.player},to:{...next.player},event:result.event,remaining:block.repeat-1};
   if(result.event==='collision'){running=false;message='Parede à frente! Revise a sequência e tente outra direção.';}
   if(result.event==='skipped')message='Condição falsa: há uma parede. O avanço foi ignorado.';
-  if(result.event==='enemy')return withRun(next,{queue:[],running:false,active:null,feedback:null,message:'Inimigo atingiu o robô! −30 pontos. Retorno à origem; pistas preservadas.'});
+  if(result.event==='enemy')return withRun(next,{queue:[],queueHistory:[],editCursor:null,lastExecution,running:false,active:null,feedback:null,message:'Inimigo atingiu o robô! −30 pontos. Retorno à origem; pistas preservadas.'});
   const clue=map.clues.find(c=>c.x===next.player.x&&c.y===next.player.y);
   if(clue&&!next.solved.includes(state.questions[i][clue.index].id)){active=state.questions[i][clue.index].id;running=false;message='Pista encontrada. Resolva o desafio para decifrá-la.';}
   if(next.player.x===map.exit.x&&next.player.y===map.exit.y){
    if(next.solved.length===state.questions[i].length){next={...next,completed:true};running=false;message='Mapa concluído! Bônus de 200 pontos antes do desconto dos comandos.';}
    else{running=false;message=`O terminal está bloqueado. Resolva as ${state.questions[i].length} pistas deste mapa.`;}
   }
-  return withRun(next,{queue,running,active,feedback:null,message,unlocked:next.completed?Math.max(state.unlocked,Math.min(LEVEL_INFO.length-1,i+1)):state.unlocked});
+  return withRun(next,{queue,running,active,feedback:null,message,editCursor:null,queueHistory:[],lastExecution,unlocked:next.completed?Math.max(state.unlocked,Math.min(LEVEL_INFO.length-1,i+1)):state.unlocked});
  }
  if(action.type==='ANSWER'){
   const q=state.questions[i].find(q=>q.id===state.active);if(!q||run.solved.includes(q.id))return state;
@@ -120,9 +137,9 @@ export function gameReducer(state,action){
  }
  if(action.type==='LEVEL'){
   if(!Number.isInteger(action.level)||action.level<0||action.level>state.unlocked)return state;
-  return {...state,level:action.level,queue:[],running:false,active:null,feedback:null,message:'Explore o mapa e reúna todas as pistas.'};
+  return {...state,level:action.level,queue:[],queueHistory:[],editCursor:null,lastExecution:null,running:false,active:null,feedback:null,message:'Explore o mapa e reúna todas as pistas.'};
  }
- if(action.type==='RESTART')return {...state,runs:state.runs.map((r,j)=>j<i?r:newRun(createMap(j,state.questions[j].length))),unlocked:i,queue:[],running:false,active:null,feedback:null,message:'Mapa reiniciado. Um novo caminho começa agora.'};
+ if(action.type==='RESTART')return {...state,runs:state.runs.map((r,j)=>j<i?r:newRun(createMap(j,state.questions[j].length))),unlocked:i,queue:[],queueHistory:[],editCursor:null,lastExecution:null,running:false,active:null,feedback:null,message:'Mapa reiniciado. Um novo caminho começa agora.'};
  if(action.type==='RESET')return freshGame(state.questions);
  if(action.type==='QUESTIONS')return freshGame(validateQuestions(action.questions));
  return state;

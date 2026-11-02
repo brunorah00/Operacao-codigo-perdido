@@ -1,0 +1,30 @@
+.sequence-editor{min-width:0;width:100%}
+.sequence-edit-tools{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:end;margin:8px 0}
+.sequence-edit-tools label{display:grid;gap:4px;min-width:0;color:#295b85;font-size:10px}
+.sequence-edit-tools select{min-height:38px;max-width:100%;width:100%;background:white;color:#194e7d;border:1px solid #91b7d9;border-radius:6px;padding:5px;font-size:12px}
+.sequence-edit-tools button{min-height:38px;padding:6px 8px;font-size:10px}
+.editable-sequence.sequence-list{min-height:60px;max-height:230px}
+.editable-sequence.sequence-list>li{padding:6px;gap:6px;min-height:48px;flex-shrink:0;font-size:10px}
+.editable-sequence .command-name{flex:1;min-width:0}
+.editable-sequence .command-name small{display:block;color:#4c6578;font-size:9px}
+.editable-sequence .command-edit-actions{display:flex;gap:3px;margin-left:auto}
+.editable-sequence .command-edit-actions button{min-width:32px;min-height:36px;padding:4px;background:#fff;border:1px solid #a4c4df;color:#245a83;font-size:18px;touch-action:manipulation}
+.editable-sequence .next-command{border-left:4px solid #176bc5}
+.editable-sequence.sequence-list>li.sequence-empty{min-height:70px;padding:10px}
+.editable-sequence .sequence-empty p{margin:0;line-height:1.5}
+.execution-feedback{padding:9px 10px;margin:8px 0;font-size:10px;line-height:1.5;background:#edf5fc;border-radius:7px;color:#285a81}
+.execution-feedback.executed{border:2px solid #c49a28;background:#fff0ac;color:#62480b}
+.execution-feedback strong{display:flex;align-items:center;gap:6px;font-size:11px}
+.execution-feedback span{display:block;margin-top:3px}
+.play-controls>.sequence-editor{grid-column:1/-1}
+.compact-editor .editable-sequence{max-height:104px;min-height:0}
+.compact-editor .sequence-list>li.sequence-empty{min-height:45px}
+.compact-editor .sequence-empty p{display:none}
+.compact-editor .sequence-edit-tools{margin:0 0 5px;flex-wrap:nowrap}
+.compact-editor .sequence-edit-tools label{font-size:9px}
+.compact-editor .sequence-edit-tools select{font-size:16px}
+.compact-editor .execution-feedback{margin:5px 0;padding:5px 8px}
+.compact-editor .execution-feedback span{font-size:10px}
+.compact-editor .editable-sequence .command-edit-actions button{min-height:40px;min-width:40px}
+@media(max-width:640px){.sequence-edit-tools select{font-size:16px}.sequence-edit-tools button{min-height:44px}.editable-sequence .command-edit-actions button{min-height:44px;min-width:36px}}
+@media(max-height:500px) and (orientation:landscape){.compact-editor .editable-sequence{display:flex;flex-direction:row;max-height:58px}.compact-editor .editable-sequence>li{min-width:230px}.compact-editor .sequence-empty{width:100%}.compact-editor .execution-feedback span{display:none}.compact-editor .sequence-edit-tools{float:right;width:55%;margin:0}.compact-editor .execution-feedback{width:43%;min-height:38px}.compact-editor .editable-sequence{clear:both}}

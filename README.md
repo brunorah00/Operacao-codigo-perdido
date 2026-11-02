@@ -67,6 +67,13 @@ Cada pista vale inicialmente 100 pontos. Erros descontam 15 e dicas descontam 20
 
 No celular, o mapa abre ampliado com controles de toque. O menu permite acessar pistas, ranking e configurações. A tela cheia é usada quando o navegador oferece suporte.
 
+### Apoios para aprender
+
+- O tutorial jogável aparece para jogadores sem movimentos anteriores e pode ser reaberto em **Como jogar → Praticar no tutorial**. Os quatro treinos apresentam avanço, giro, repetição e condição; podem ser pulados e não alteram campanha ou ranking.
+- O painel destaca o último comando executado e explica o movimento, giro, colisão ou condição ignorada. A fila identifica separadamente o comando que vem a seguir. **Passo** executa uma ação por vez, inclusive dentro de uma repetição.
+- O editor permite escolher a posição de inserção, mover blocos pelas setas, remover e limpar. **Desfazer edição** (também Ctrl/Cmd+Z fora de campos de texto) restaura a fila; não desfaz movimentos nem devolve pontos. O histórico de edições é descartado ao executar uma ação, sofrer um ataque ou trocar de setor.
+- **Sua evolução** compara a quantidade de comandos entre conclusões do mesmo setor e banco de desafios. Aparece no painel, no menu do modo ampliado e ao concluir o setor. O histórico é individual e local, preservado ao reiniciar e separado do ranking. Tentativas abandonadas não entram nessa comparação; alterar o banco de desafios inicia uma nova referência.
+
 ## Validação
 
 `npm test` verifica o motor do jogo, persistência local, pontuação, inimigos, áudio, exibição e clientes de cadastro e ranking. Os testes SQL em `backend/tests/leaderboard.sql` verificam migrações e autorizações em PostgreSQL vazio e descartável. Não execute esse arquivo de testes no Supabase de produção.
