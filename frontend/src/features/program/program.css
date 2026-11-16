@@ -17,14 +17,31 @@
 .execution-feedback strong{display:flex;align-items:center;gap:6px;font-size:11px}
 .execution-feedback span{display:block;margin-top:3px}
 .play-controls>.sequence-editor{grid-column:1/-1}
-.compact-editor .editable-sequence{max-height:104px;min-height:0}
-.compact-editor .sequence-list>li.sequence-empty{min-height:45px}
-.compact-editor .sequence-empty p{display:none}
-.compact-editor .sequence-edit-tools{margin:0 0 5px;flex-wrap:nowrap}
+/* Reserve the same dock space for an empty or full sequence. Only the list scrolls. */
+.compact-editor{display:grid;grid-template-rows:54px 48px 64px;gap:5px;overflow:hidden}
+.compact-editor .sequence-edit-tools{margin:0;min-width:0;align-items:end}
 .compact-editor .sequence-edit-tools label{font-size:9px}
 .compact-editor .sequence-edit-tools select{font-size:16px}
-.compact-editor .execution-feedback{margin:5px 0;padding:5px 8px}
+.compact-editor .execution-feedback{box-sizing:border-box;height:48px;min-height:0;margin:0;padding:5px 8px;overflow:hidden;border:2px solid transparent}
+.compact-editor .execution-feedback.executed{border-color:#c49a28}
+.compact-editor .execution-feedback strong,.compact-editor .execution-feedback span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.compact-editor .execution-feedback strong{display:block;font-size:11px}
+.compact-editor .execution-feedback strong svg{vertical-align:middle;margin-right:4px}
 .compact-editor .execution-feedback span{font-size:10px}
-.compact-editor .editable-sequence .command-edit-actions button{min-height:40px;min-width:40px}
+.compact-editor .editable-sequence.sequence-list{box-sizing:border-box;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:6px;width:100%;height:64px;min-height:64px;max-height:64px;margin:0;padding:0 0 5px;overflow-x:auto;overflow-y:hidden;overscroll-behavior:contain;overflow-anchor:none;scrollbar-width:thin}
+.compact-editor .editable-sequence.sequence-list>li{box-sizing:border-box;flex:0 0 260px;min-width:0;min-height:0;margin:0;padding:4px;white-space:nowrap}
+.compact-editor .editable-sequence .command-name{overflow:hidden;text-overflow:ellipsis}
+.compact-editor .editable-sequence .command-edit-actions{flex-shrink:0}
+.compact-editor .editable-sequence .command-edit-actions button{min-height:40px;min-width:36px}
+.compact-editor .sequence-list>li.sequence-empty{flex-basis:100%;min-height:0;justify-content:center}
+.compact-editor .sequence-empty p{display:none}
 @media(max-width:640px){.sequence-edit-tools select{font-size:16px}.sequence-edit-tools button{min-height:44px}.editable-sequence .command-edit-actions button{min-height:44px;min-width:36px}}
-@media(max-height:500px) and (orientation:landscape){.compact-editor .editable-sequence{display:flex;flex-direction:row;max-height:58px}.compact-editor .editable-sequence>li{min-width:230px}.compact-editor .sequence-empty{width:100%}.compact-editor .execution-feedback span{display:none}.compact-editor .sequence-edit-tools{float:right;width:55%;margin:0}.compact-editor .execution-feedback{width:43%;min-height:38px}.compact-editor .editable-sequence{clear:both}}
+@media(max-height:500px) and (orientation:landscape){
+ .compact-editor{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:44px 58px;gap:4px}
+ .compact-editor .sequence-edit-tools{height:44px;align-self:end}
+ .compact-editor .sequence-edit-tools label{font-size:0;gap:0}
+ .compact-editor .sequence-edit-tools button{min-height:38px}
+ .compact-editor .execution-feedback{height:44px;align-self:end}
+ .compact-editor .execution-feedback span{display:none}
+ .compact-editor .editable-sequence.sequence-list{grid-column:1/-1;height:58px;min-height:58px;max-height:58px}
+}

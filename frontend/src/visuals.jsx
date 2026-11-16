@@ -1,5 +1,5 @@
 import {ENEMY_TYPES} from './enemies.js';
-import React,{useEffect,useMemo,useRef,useState} from 'react';
+import React,{memo,useEffect,useMemo,useRef,useState} from 'react';
 import {canSee,key} from './engine.js';
 import {mapViewDimensions,updateViewportSize} from './display.js';
 export function Icon({name,size=20,...props}){
@@ -49,7 +49,7 @@ export function Robot({className='',style}){
   <circle cx="77" cy="75" r="12" fill="#64dfff" fillOpacity=".5" stroke="#ffde4c" strokeWidth="5"/><path d="m72 71 5-3" stroke="#fff" strokeWidth="3" strokeLinecap="round"/>
  </svg>;
 }
-export function WalkingRobot({direction=1,walking=false,stepDuration=360}){
+export const WalkingRobot=memo(function WalkingRobot({direction=1,walking=false,stepDuration=360}){
  const side=direction===1||direction===3,back=direction===0;
  return <svg x="-41" y="-80" width="82" height="107" viewBox="0 0 100 130" fill="none" overflow="visible" className={`robot-character ${walking?'walking':''}`} data-facing={['north','east','south','west'][direction]} style={{'--step-cycle':`${stepDuration}ms`}} aria-hidden="true">
   <ellipse className="robot-shadow" cx="50" cy="121" rx="28" ry="7" fill="#0b2353" opacity=".6"/>
@@ -67,7 +67,7 @@ export function WalkingRobot({direction=1,walking=false,stepDuration=360}){
    </g>
   </g>
  </svg>;
-}
+});
 function cameraFor(camera,player,w,h,size){
  const x=player.x+.5,y=player.y+.5,dx=w*.23,dy=h*.23;
  return {x:Math.max(w/2,Math.min(size-w/2,Math.max(x-dx,Math.min(x+dx,camera.x)))),y:Math.max(h/2,Math.min(size-h/2,Math.max(y-dy,Math.min(y+dy,camera.y))))};
@@ -86,7 +86,7 @@ function useWalkingPosition(run,size,w,h,duration){
   if(reset||reduced){const next={...target,camera:resized?cameraFor({x:target.x+.5,y:target.y+.5},target,w,h,size):camera,walking:false};frame.current=next;setPosition(next);return;}
   let request,start;
   const tick=now=>{
-   start??=now;const progress=Math.min(1,(now-start)/duration),ease=progress*progress*(3-2*progress);
+   start??=now;const progress=Math.min(1,(now-start)/duration),ease=progress;
    const next={x:from.x+(target.x-from.x)*ease,y:from.y+(target.y-from.y)*ease,camera:{x:from.camera.x+(camera.x-from.camera.x)*ease,y:from.camera.y+(camera.y-from.camera.y)*ease},walking:progress<1};
    frame.current=next;setPosition(next);if(progress<1)request=requestAnimationFrame(tick);
   };
@@ -201,7 +201,7 @@ export function GameMap({map,run,questions,compact=false,stepDuration=360,fitVie
    <LandscapeTile kind={kind} wall={!!map.grid[y][x]} x={x} y={y}/>
   </g>);
 
- }return cells;},[map,run,terrain]);
+ }return cells;},[map,run.seen,visualRun.player.x,visualRun.player.y,visualRun.player.dir,terrain]);
  const rot=[-90,0,90,180][run.player.dir],cx=(position.x+.5)*tile,cy=(position.y+.5)*tile;
  const exitSeen=run.seen[key(map.exit.x,map.exit.y)];
  return <svg ref={svgRef} className="game-map" viewBox={`${vx} ${vy} ${w*tile} ${h*tile}`} role="img" aria-label={`Mapa ${map.size} por ${map.size}. Robô na coluna ${run.player.x+1}, linha ${run.player.y+1}. Visão limitada pela lanterna.`}>

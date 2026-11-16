@@ -12,10 +12,17 @@ export function ExecutionFeedback({execution,running}){
 }
 
 export function SequenceEditor({state,dispatch,compact=false}){
- const listRef=useRef(null),run=state.runs[state.level],blocked=state.running||!!state.active||run.completed||!!run.impact;
- useEffect(()=>{if(state.running&&listRef.current)listRef.current.scrollTop=0;},[state.queue,state.running]);
+ const listRef=useRef(null),previousLength=useRef(state.queue.length),run=state.runs[state.level],blocked=state.running||!!state.active||run.completed||!!run.impact;
+ useEffect(()=>{
+  const list=listRef.current;
+  if(list){
+   if(state.running){list.scrollTop=0;list.scrollLeft=0;}
+   else if(compact&&state.queue.length>previousLength.current&&state.editCursor==null)list.scrollLeft=list.scrollWidth;
+  }
+  previousLength.current=state.queue.length;
+ },[state.queue,state.running,state.editCursor,compact]);
  return <div className={`sequence-editor${compact?' compact-editor':''}`}>
-  <div className="sequence-edit-tools"><label>Inserir comando<select aria-label="Posição para inserir comando" disabled={blocked} value={state.editCursor??state.queue.length} onChange={e=>dispatch({type:'INSERT_AT',index:Number(e.target.value)})}>
+  <div className="sequence-edit-tools"><label>{compact?`Sequência ${state.queue.length}/30 · inserir`:'Inserir comando'}<select aria-label="Posição para inserir comando" disabled={blocked} value={state.editCursor??state.queue.length} onChange={e=>dispatch({type:'INSERT_AT',index:Number(e.target.value)})}>
    {Array.from({length:state.queue.length+1},(_,index)=><option key={index} value={index}>{index===state.queue.length?'No final':`Antes do comando ${index+1}`}</option>)}
   </select></label><button className="secondary" disabled={blocked||!state.queueHistory?.length} onClick={()=>dispatch({type:'UNDO_QUEUE'})}>Desfazer edição</button><button className="secondary" disabled={blocked||!state.queue.length} onClick={()=>dispatch({type:'CLEAR'})} aria-label="Limpar sequência de comandos"><Icon name="trash" size={16}/></button></div>
   <ExecutionFeedback execution={state.lastExecution} running={state.running}/>

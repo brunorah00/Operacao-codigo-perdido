@@ -45,6 +45,7 @@ test('Contact from a robot step costs 30 points, resets position and clears exec
 test('Moving enemies hit the robot; cards and completed stages pause patrols',()=>{
  let s=freshGame(),r=s.runs[0];r.invulnerable=0;
  const map=createMap(0),enemy=spawnEnemies(map,42)[0];
+ r.enemyTick=ENEMY_TYPES[map.theme].period-1;
  r.enemies=[enemy];r.player={x:enemy.x+enemy.dx,y:enemy.y+enemy.dy,dir:1};
  s=gameReducer(s,{type:'ENEMY_TICK'});
  assert.equal(s.runs[0].hits,1);
@@ -100,4 +101,28 @@ test('Hit animation records contact, freezes play, and releases only its matchin
  const restored=loadGame({getItem:()=>saved});
  assert.equal(restored.runs[0].impact,null,'loading cannot trap the player in an animation');
  assert.equal(restored.runs[0].enemyPenalty,30);
+});
+
+
+test('First-stage bees move every 1.8 seconds and leave both sides of each room clear',()=>{
+ for(let count=3;count<=12;count++)for(let seed=0;seed<20;seed++){
+  const map=createMap(0,count);
+  let run={enemies:spawnEnemies(map,seed),enemyTick:0};
+  assert.equal(run.enemies.length,4);
+  const start=run.enemies;
+  run=advanceEnemies(map,run);assert.deepEqual(run.enemies,start);
+  run=advanceEnemies(map,run);assert.deepEqual(run.enemies,start);
+  run=advanceEnemies(map,run);
+  assert(run.enemies.every((e,i)=>e.x===start[i].x&&e.y===start[i].y+1));
+  const visited=run.enemies.map(()=>new Set());
+  for(let tick=0;tick<60;tick++){
+   run=advanceEnemies(map,run);
+   for(const [i,e] of run.enemies.entries()){
+    const room=map.arenas[i];
+    assert(e.x>room.x&&e.x<room.x+room.width-1);
+    visited[i].add(e.y);
+   }
+  }
+  assert(visited.every(cells=>cells.size>=3),'avoid patrols trapped between two cells');
+ }
 });
